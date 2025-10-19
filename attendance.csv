@@ -1,0 +1,40 @@
+studentId,courseName,date,status,instructor
+STU101,Physics,2024-10-10,Present,Dr. Marie Curie
+STU101,Mathematics,2024-10-10,Present,Dr. Alan Turing
+STU101,Computer Science,2024-10-09,Present,Dr. Ada Lovelace
+STU101,History,2024-10-09,Absent,Dr. Ibn Khaldun
+STU101,English,2024-10-08,Present,Dr. William Shakespeare
+STU101,Physics,2024-10-08,Present,Dr. Marie Curie
+STU101,Mathematics,2024-10-07,Late,Dr. Alan Turing
+STU102,Physics,2024-10-10,Present,Dr. Marie Curie
+STU102,Mathematics,2024-10-10,Present,Dr. Alan Turing
+STU102,Computer Science,2024-10-09,Present,Dr. Ada Lovelace
+STU103,History,2024-10-09,Present,Dr. Ibn Khaldun
+STU103,Mathematics,2024-10-07,Absent,Dr. Alan Turing
+STU104,Computer Science,2024-10-09,Present,Dr. Ada Lovelace
+STU104,Mathematics,2024-10-07,Present,Dr. Alan Turing
+STU101,Physics,2025-10-18,Late,Dr. Marie Curie
+STU102,Physics,2025-10-18,Present,Dr. Marie Curie
+STU103,Physics,2025-10-18,Present,Dr. Marie Curie
+STU101,Physics,2025-10-18,Present,Dr. Marie Curie
+STU102,Physics,2025-10-18,Present,Dr. Marie Curie
+STU103,Physics,2025-10-18,Present,Dr. Marie Curie
+STU101,History,2025-10-18,Present,Dr. Ibn Khaldun
+STU102,History,2025-10-18,Present,Dr. Ibn Khaldun
+STU103,History,2025-10-18,Present,Dr. Ibn Khaldun
+STU101,English,2025-10-19,Late,Dr. William Shakespeare
+STU102,Computer Science,2025-10-19,Present,Dr. Ada Lovelace
+STU101,Computer Science,2025-10-19,Present,Dr. Ada Lovelace
+STU104,Computer Science,2025-10-19,Present,Dr. Ada Lovelace
+STU105,Computer Science,2025-10-19,Present,Prof. Davis
+STU101,Mathematics,2025-10-19,Present,Dr. Alan Turing
+STU103,Mathematics,2025-10-19,Present,Dr. Alan Turing
+STU104,Mathematics,2025-10-19,Present,Dr. Alan Turing
+
+STU105,Introduction to Python,2025-10-19,Present,Prof. Davis
+STU103,Computer Science,2025-10-19,Present,Prof. Davis
+STU103,Computer Science,2025-10-19,Absent,Dr. Ada Lovelace
+STU102,Computer Science,2025-10-19,Absent,Dr. Ada Lovelace
+STU104,Computer Science,2025-10-19,Present,Dr. Ada Lovelace
+STU101,Computer Science,2025-10-19,Late,Dr. Ada Lovelace
+STU105,Computer Science,2025-10-19,Present,Dr. Ada Lovelace

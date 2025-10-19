@@ -1,0 +1,6 @@
+studentId,password,firstName,lastName,email,major,program,gpa,enrollmentDate
+STU101,pass123,Alex,Johnson,alex.johnson@university.edu,Computer Science,Bachelor of Science,3.8,2023-08-20
+STU102,pass123,Maria,Garcia,maria.garcia@university.edu,Physics,Bachelor of Science,3.9,2023-08-20
+STU103,pass123,James,Smith,james.smith@university.edu,History,Bachelor of Arts,3.2,2023-08-20
+STU104,pass123,Priya,Rao,priya.rao@university.edu,Computer Science,Bachelor of Science,3.7,2023-08-20
+STU105,pass123,Kalakota,Abhiram,abhiramkalakota06@gmail.com,Undeclared,Undeclared,0.0,2025-10-19,2006-11-10

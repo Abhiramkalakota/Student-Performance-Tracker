@@ -1,0 +1,17 @@
+studentId,courseName,assignmentName,assignmentType,score,dateGraded
+STU101,Mathematics,Calculus Mid-Term,Exam,92,2024-10-08
+STU101,Physics,Lab Report #3,Lab,85,2024-10-06
+STU101,Computer Science,Project Milestone 1,Project,88,2024-10-05
+STU101,History,The Renaissance Essay,Essay,78,2024-10-02
+STU101,English,Shakespeare Analysis,Homework,90,2024-09-28
+STU101,Mathematics,Algebra Quiz,Quiz,89,2024-09-25
+STU102,Mathematics,Calculus Mid-Term,Exam,95,2024-10-08
+STU102,Physics,Lab Report #3,Lab,98,2024-10-06
+STU102,Computer Science,Project Milestone 1,Project,82,2024-10-05
+STU102,History,The Renaissance Essay,Essay,88,2024-10-02
+STU103,Mathematics,Calculus Mid-Term,Exam,71,2024-10-08
+STU103,Physics,Lab Report #3,Lab,75,2024-10-06
+STU103,History,The Renaissance Essay,Essay,80,2024-10-02
+STU104,Computer Science,Project Milestone 1,Project,95,2024-10-05
+STU104,Computer Science,Data Structures Quiz,Quiz,91,2024-09-29
+STU104,Mathematics,Algebra Quiz,Quiz,88,2024-09-25
