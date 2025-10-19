@@ -1,0 +1,109 @@
+/* --- Global Styles & Resets --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0f2f5;
+    color: #333;
+}
+
+/* --- Main Login Container --- */
+.main-container {
+    display: flex;
+    width: 90%;
+    max-width: 1000px;
+    min-height: 600px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+/* --- Left Information Panel --- */
+.info-panel {
+    flex-basis: 55%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    padding: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.info-content h1 { font-size: 36px; font-weight: 600; margin-bottom: 20px; }
+.info-content p { font-size: 16px; line-height: 1.6; max-width: 400px; }
+.decorative-shapes .shape { position: absolute; display: block; background: linear-gradient(135deg, #ff9a9e, #fecfef); border-radius: 50px; opacity: 0.6; transform: rotate(-30deg); }
+.shape1 { width: 150px; height: 15px; bottom: 15%; left: -50px; }
+.shape2 { width: 200px; height: 20px; bottom: 30%; left: -80px; }
+.shape3 { width: 120px; height: 12px; bottom: 50%; left: -40px; }
+.shape4 { width: 250px; height: 25px; bottom: 10%; left: 100px; }
+
+/* --- Right Login Panel --- */
+.login-panel {
+    flex-basis: 45%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    background-color: #fff;
+    position: relative; /* CRUCIAL: This makes it the anchor for the menu */
+}
+
+.login-form { width: 100%; max-width: 320px; }
+
+.login-form h3 {
+    text-align: left;
+    color: #888;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    margin-bottom: 30px;
+}
+
+/* --- Input Fields & Icons --- */
+.input-wrapper { position: relative; margin-bottom: 20px; }
+.input-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: #aaa; }
+.input-wrapper input { width: 100%; padding: 12px 15px 12px 45px; border: 1px solid #e0e0e0; border-radius: 50px; background-color: #f7f7f7; font-size: 15px; font-family: 'Poppins', sans-serif; transition: border-color 0.3s, box-shadow 0.3s; }
+.input-wrapper input:focus { outline: none; border-color: #764ba2; box-shadow: 0 0 5px rgba(102, 126, 234, 0.3); }
+
+/* --- Options Row --- */
+.options-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; font-size: 14px; }
+.remember-me { display: flex; align-items: center; color: #666; cursor: pointer; }
+.remember-me input { margin-right: 8px; }
+.forgot-password { color: #888; text-decoration: none; transition: color 0.3s; }
+.forgot-password:hover { color: #667eea; }
+
+/* --- Login Button --- */
+.login-btn { width: 100%; padding: 12px; border: none; border-radius: 50px; background: linear-gradient(90deg, #8961d6, #d364a4); color: white; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.2s, box-shadow 0.3s; }
+.login-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(137, 97, 214, 0.4); }
+
+/* --- Hamburger Menu for Role Selection (NEW) --- */
+.menu-container { position: absolute; top: 25px; right: 25px; }
+.hamburger-menu { width: 30px; height: 25px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; background: transparent; border: none; padding: 0; }
+.hamburger-menu span { display: block; width: 100%; height: 3px; background-color: #888; border-radius: 3px; transition: background-color 0.3s ease-in-out; }
+.hamburger-menu:hover span { background-color: #667eea; }
+.dropdown-menu { display: none; position: absolute; top: 40px; right: 0; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); border: 1px solid #eee; overflow: hidden; z-index: 1000; width: 150px; }
+.dropdown-menu.show { display: block; }
+.dropdown-item { display: block; padding: 12px 20px; color: #333; text-decoration: none; font-weight: 500; transition: background-color 0.2s, color 0.2s; }
+.dropdown-item:hover { background-color: #f0f6ff; color: #0056b3; }
+
+/* --- Footer --- */
+.attribution { margin-top: 20px; font-size: 12px; color: #aaa; }
+
+/* --- Responsive Design --- */
+@media (max-width: 850px) {
+    .main-container { flex-direction: column; width: 95%; max-width: 450px; min-height: auto; }
+    .info-panel { padding: 40px; min-height: 250px; }
+    .login-panel { padding: 40px 20px; }
+}
