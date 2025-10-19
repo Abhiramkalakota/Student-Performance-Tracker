@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='faculty_style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Admin Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="{{ url_for('faculty_dashboard') }}">Dashboard</a></li>
+                    <li><a href="{{ url_for('manage_students') }}">Students</a></li>
+                    <li><a href="{{ url_for('manage_courses') }}">Courses</a></li>
+                    <li><a href="{{ url_for('upload_data') }}">Upload Data</a></li>
+                    <li><a href="{{ url_for('reports') }}" class="active">Reports</a></li>
+                    <li><a href="{{ url_for('take_attendance') }}">Attendance</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Generate Reports</h1>
+                 <div class="user-profile">
+                    <span>{{ user_name }}</span>
+                    </div>
+            </header>
+
+            <section class="report-generator">
+                <div class="card">
+                    <h3>Report Generator</h3>
+                    <form id="report-form">
+                        <div class="filter-bar">
+                            <div class="form-group">
+                                <label for="report-type">Report Type:</label>
+                                <select id="report-type" name="report_type" class="form-control">
+                                    <option value="performance">Class Performance Summary</option>
+                                    <option value="attendance">Student Attendance Report</option>
+                                    <option value="gradebook">Full Gradebook Export (.csv)</option>
+                                    <option value="at_risk">Students At Risk</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="course-select">For Course:</label>
+                                <select id="course-select" name="course" class="form-control">
+                                    <option value="all">All Courses</option>
+                                    {% for course in courses %}
+                                    <option value="{{ course }}">{{ course }}</option>
+                                    {% else %}
+                                    <option disabled>No courses found</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                             <div class="form-group">
+                                <label for="date-range">Date Range (Optional):</label>
+                                <input type="date" id="date-range" name="date_range" class="form-control">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Generate Report</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section class="charts-section" style="grid-template-columns: 1fr; margin-top: 30px;">
+                 <div class="chart-container"> {/* CSS rule sets max-height here */}
+                    <h3>Assignment Pass/Fail Rate by Course</h3>
+                    <canvas id="passFailChart"></canvas>
+                 </div>
+                 <p id="no-chart-data" style="text-align: center; display: none; margin-top: 10px;">No assignment data found for charting.</p>
+
+            </section>
+
+            <section class="recent-reports" style="margin-top: 30px;">
+                <div class="card">
+                    <h3>Recently Generated Reports (Static Example)</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Report Name</th>
+                                <th>Course</th>
+                                <th>Date Generated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>CS305_Gradebook_Export.csv</td>
+                                <td>Computer Science</td>
+                                <td>2025-10-18 19:00</td>
+                                <td><button class="btn-action">Download</button></td>
+                            </tr>
+                            <tr>
+                                <td>PHY201_Attendance_Summary.pdf</td>
+                                <td>Physics</td>
+                                <td>2025-10-17 09:15</td>
+                                <td><button class="btn-action">Download</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Chart.js - Pass/Fail Rate (Stacked Bar Chart)
+        const passFailCtx = document.getElementById('passFailChart');
+        const noChartDataMsg = document.getElementById('no-chart-data');
+        const chartLabels = {{ chart_labels | default('[]') | safe }};
+
+        if (passFailCtx) {
+             const passFailChart = new Chart(passFailCtx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Pass (>=50)',
+                        data: {{ pass_data | default('[]') | safe }},
+                        backgroundColor: '#4CAF50',
+                    }, {
+                        label: 'Fail (<50)',
+                        data: {{ fail_data | default('[]') | safe }},
+                        backgroundColor: '#F44336',
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: false },
+                        tooltip: {
+                             callbacks: {
+                                 label: function(context) {
+                                     let label = context.dataset.label || '';
+                                     if (label) { label += ': '; }
+                                     if (context.parsed.y !== null) { label += context.parsed.y + ' assignments'; }
+                                     return label;
+                                 }
+                             }
+                        }
+                    },
+                    responsive: true,
+                    // CORRECTED Stacking configuration
+                    scales: {
+                        x: {
+                             stacked: true, // Correctly set here
+                             title: { display: true, text: 'Course' }
+                        },
+                        y: {
+                             stacked: true, // Correctly set here
+                             beginAtZero: true,
+                             title: { display: true, text: 'Number of Assignments' }
+                        }
+                    }
+                }
+            });
+            // Show message if no data was passed from Flask
+            noChartDataMsg.style.display = chartLabels.length === 0 ? 'block' : 'none';
+
+        } else {
+            console.error("Canvas element #passFailChart not found.");
+        }
+
+        // Optional: Basic form submission handler (shows alert only)
+        const reportForm = document.getElementById('report-form');
+        if (reportForm) {
+            reportForm.addEventListener('submit', function(event) {
+                event.preventDefault(); // Prevent actual form submission
+                const reportType = document.getElementById('report-type').value;
+                const course = document.getElementById('course-select').value;
+                alert(`Generating report type '${reportType}' for course '${course}'.\n(Note: Actual report generation not implemented yet.)`);
+                // Future: Send this data to a new Flask route for actual report generation.
+            });
+        }
+    </script>
+</body>
+</html>

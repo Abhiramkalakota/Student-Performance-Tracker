@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='student_style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Dashboard</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="{{ url_for('student_dashboard') }}" class="active">Overview</a></li>
+                    <li><a href="{{ url_for('my_courses') }}">My Courses</a></li>
+                    <li><a href="{{ url_for('grades') }}">Grades</a></li>
+                    <li><a href="{{ url_for('attendance') }}">Attendance</a></li>
+                    <li><a href="{{ url_for('profile') }}">Profile</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Welcome, {{ user_name }}!</h1>
+                <div class="user-profile">
+                    <span>{{ user_name }}</span>
+                    <img src="https://placehold.co/40x40/E8E8E8/4a4a4a?text={{ user_name[0] }}" alt="User Avatar">
+                </div>
+            </header>
+
+            <section class="kpi-cards">
+                <div class="card">
+                    <h3>Overall Grade</h3>
+                    <p>{{ overall_grade }}%</p>
+                    <span>A-</span>
+                </div>
+                <div class="card">
+                    <h3>Attendance</h3>
+                    <p>94%</p> <span>Excellent</span>
+                </div>
+                <div class="card">
+                    <h3>Courses Enrolled</h3>
+                    <p>5</p> <span>Current Semester</span>
+                </div>
+                <div class="card">
+                    <h3>Assignments Due</h3>
+                    <p>3</p> <span>This Week</span>
+                </div>
+            </section>
+
+            <section class="charts-section">
+                <div class="chart-container">
+                    <h3>Performance by Subject</h3>
+                    <canvas id="subjectPerformanceChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Semester Progress</h3>
+                    <canvas id="semesterProgressChart"></canvas>
+                </div>
+            </section>
+
+            <section class="recent-activity">
+                <h3>Recent Grades</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Assignment</th>
+                            <th>Score</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for grade in recent_grades %}
+                        <tr>
+                            <td>{{ grade.courseName }}</td>
+                            <td>{{ grade.assignmentName }}</td>
+                            <td>{{ grade.score }}/100</td>
+                            <td>{{ grade.dateGraded }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4">No recent grades found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Chart.js - Subject Performance (Bar Chart)
+        const subjectCtx = document.getElementById('subjectPerformanceChart').getContext('2d');
+        new Chart(subjectCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ chart_labels | safe }},
+                datasets: [{
+                    label: 'Current Score',
+                    data: {{ chart_scores | safe }},
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: { scales: { y: { beginAtZero: true, max: 100 } } }
+        });
+
+        // Chart.js - Semester Progress (Line Chart)
+        const semesterCtx = document.getElementById('semesterProgressChart').getContext('2d');
+        new Chart(semesterCtx, {
+            type: 'line',
+            data: {
+                labels: ['Week 1', 'Week 4', 'Week 8', 'Week 12', 'Finals'],
+                datasets: [{
+                    label: 'Overall Average',
+                    data: [82, 85, 84, 88, {{ overall_grade }}], /* Example data */
+                    fill: false,
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }]
+            },
+            options: { scales: { y: { beginAtZero: false } } }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Grades - Student Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='student_style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Dashboard</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="{{ url_for('student_dashboard') }}">Overview</a></li>
+                    <li><a href="{{ url_for('my_courses') }}">My Courses</a></li>
+                    <li><a href="{{ url_for('grades') }}" class="active">Grades</a></li>
+                    <li><a href="{{ url_for('attendance') }}">Attendance</a></li>
+                    <li><a href="{{ url_for('profile') }}">Profile</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>My Grades</h1>
+                <div class="user-profile">
+                    <span>{{ user_name }}</span>
+                    <img src="https://placehold.co/40x40/E8E8E8/4a4a4a?text={{ user_name[0] }}" alt="User Avatar">
+                </div>
+            </header>
+
+            <section class="kpi-cards">
+                <div class="card">
+                    <h3>Overall GPA</h3>
+                    <p>{{ gpa }}</p>
+                    <span>On a 4.0 Scale</span>
+                </div>
+                <div class="card">
+                    <h3>Overall Grade</h3>
+                    <p>{{ overall_grade }}%</p>
+                    <span>A- Average</span>
+                </div>
+                <div class="card">
+                    <h3>Highest Grade</h3>
+                    <p>{{ highest_grade.score }}%</p>
+                    <span>{{ highest_grade.name }}</span>
+                </div>
+                <div class="card">
+                    <h3>Lowest Grade</h3>
+                    <p>{{ lowest_grade.score }}%</p>
+                    <span>{{ lowest_grade.name }}</span>
+                </div>
+            </section>
+
+            <section class="detailed-grades">
+                <h3>Detailed Grade Report</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Assignment</th>
+                            <th>Type</th>
+                            <th>Score</th>
+                            <th>Date Graded</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for grade in grades %}
+                        <tr>
+                            <td>{{ grade.courseName }}</td>
+                            <td>{{ grade.assignmentName }}</td>
+                            <td>{{ grade.assignmentType }}</td>
+                            <td>{{ grade.score }}/100</td>
+                            <td>{{ grade.dateGraded }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5">No grades have been uploaded for you yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

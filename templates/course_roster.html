@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Roster - {{ course_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='faculty_style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Flash message styling */
+        .flash-messages { list-style: none; padding: 0; margin: 20px 0 0 0; }
+        .flash-messages li { padding: 15px; margin-bottom: 10px; border-radius: 5px; font-weight: 500; }
+        .flash-messages .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .flash-messages .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .flash-messages .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header"><h2>Admin Panel</h2></div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="{{ url_for('faculty_dashboard') }}">Dashboard</a></li>
+                    <li><a href="{{ url_for('manage_students') }}">Students</a></li>
+                    <li><a href="{{ url_for('manage_courses') }}" class="active">Courses</a></li>
+                    <li><a href="{{ url_for('upload_data') }}">Upload Data</a></li>
+                    <li><a href="{{ url_for('reports') }}">Reports</a></li>
+                    <li><a href="{{ url_for('take_attendance') }}">Attendance</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Course Roster: {{ course_name }}</h1>
+                <div class="header-actions">
+                     <a href="{{ url_for('manage_courses') }}" class="btn btn-secondary">Back to Courses</a>
+                </div>
+            </header>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <ul class="flash-messages">
+                {% for category, message in messages %}
+                  <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+                </ul>
+              {% endif %}
+            {% endwith %}
+
+            <section class="student-management card" style="margin-top: 20px;">
+                <h3>Students Enrolled ({{ roster|length }})</h3>
+                {% if roster %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            {# Add Actions header if needed #}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in roster %}
+                        <tr>
+                            <td>{{ student.id }}</td>
+                            <td>{{ student.name }}</td>
+                            <td>{{ student.email }}</td>
+                            {# Add View/Remove actions if needed #}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>No students currently enrolled or associated with this course.</p>
+                {% endif %}
+            </section>
+
+            <section class="add-student-to-roster" style="margin-top: 30px;">
+                <div class="card">
+                    <h3>Add Existing Student to Roster</h3>
+                    {% if available_students %}
+                    <form action="{{ url_for('enroll_student') }}" method="POST">
+                        <input type="hidden" name="course_name" value="{{ course_name }}">
+                        <div class="filter-bar" style="align-items: flex-end;"> {# Using filter-bar style for layout #}
+                            <div class="form-group">
+                                <label for="student-select">Select Student:</label>
+                                <select id="student-select" name="student_id_to_add" class="form-control" required>
+                                    <option value="" disabled selected>-- Choose a student --</option>
+                                    {% for student in available_students %}
+                                    <option value="{{ student.id }}">{{ student.name }} ({{ student.id }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add Student</button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <p>All registered students are already associated with this course, or no students found.</p>
+                    {% endif %}
+                </div>
+            </section>
+            </main>
+    </div>
+</body>
+</html>

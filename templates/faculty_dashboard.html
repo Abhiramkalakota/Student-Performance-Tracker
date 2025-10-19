@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='faculty_style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Admin Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="{{ url_for('faculty_dashboard') }}" class="active">Dashboard</a></li>
+                    <li><a href="{{ url_for('manage_students') }}">Students</a></li>
+                    <li><a href="{{ url_for('manage_courses') }}">Courses</a></li>
+                    <li><a href="{{ url_for('upload_data') }}">Upload Data</a></li>
+                    <li><a href="{{ url_for('reports') }}">Reports</a></li>
+                    <li><a href="{{ url_for('take_attendance') }}">Attendance</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Class Overview</h1>
+                 <div class="user-profile">
+                    <a href="{{ url_for('faculty_profile') }}" style="text-decoration: none; color: inherit;">
+                        <span>{{ user_name }}</span>
+                    </a>
+                 </div>
+                <div class="header-actions">
+                    <a href="{{ url_for('upload_data') }}" class="btn btn-primary">Upload CSV</a>
+                    <a href="{{ url_for('add_student') }}" class="btn btn-primary">Add Student</a>
+                </div>
+            </header>
+
+            <section class="kpi-cards">
+                <div class="card">
+                    <h3>Total Students</h3>
+                    <p>{{ total_students | default('N/A') }}</p>
+                    <span>In All Classes</span>
+                </div>
+                <div class="card">
+                    <h3>Class Average</h3>
+                    <p>{{ class_average | default('N/A') }}%</p>
+                    <span>Across All Grades</span> {# Adjusted description #}
+                </div>
+                <div class="card">
+                    <h3>Top Performing Subject</h3>
+                    <p>{{ top_subject | default('N/A') }}</p>
+                    <span>{{ top_subject_avg | default('N/A') }}% Avg.</span>
+                </div>
+                <div class="card">
+                    <h3>Submissions Graded</h3>
+                    <p>N/A</p> {# Placeholder - Requires more logic #}
+                    <span>(Feature Not Implemented)</span>
+                </div>
+            </section>
+
+            <section class="charts-section">
+                <div class="chart-container">
+                    {# UPDATED: Removed "(Static Example)" from title #}
+                    <h3>Grade Distribution</h3>
+                    <canvas id="gradeDistributionChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Subject Performance Average</h3>
+                    <canvas id="subjectAverageChart"></canvas>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        // Chart.js - Grade Distribution (Pie Chart) - DYNAMIC
+        const gradeCtx = document.getElementById('gradeDistributionChart');
+        if (gradeCtx) {
+            new Chart(gradeCtx.getContext('2d'), {
+                type: 'pie',
+                data: {
+                    // Uses dynamic labels passed from app.py
+                    labels: {{ dist_labels | default('[]') | safe }},
+                    datasets: [{
+                        label: 'Grade Distribution (# Assignments)',
+                        // Uses dynamic data values passed from app.py
+                        data: {{ dist_values | default('[]') | safe }},
+                        backgroundColor: [ '#4CAF50', '#2196F3', '#FFC107', '#F44336' ], // Green(A), Blue(B), Yellow(C), Red(D/F)
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                     maintainAspectRatio: false,
+                     plugins: {
+                         legend: { position: 'top' },
+                         tooltip: {
+                              callbacks: {
+                                 label: function(context) {
+                                     let label = context.label || '';
+                                     if (label) { label += ': '; }
+                                     let value = context.parsed || 0;
+                                     label += value + ' assignments';
+                                     // Optional: Calculate percentage (uncomment if needed)
+                                     // let total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                     // let percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
+                                     // label += ` (${percentage})`;
+                                     return label;
+                                 }
+                             }
+                         }
+                     },
+                     responsive: true,
+                }
+            });
+        } else { console.error("Canvas element #gradeDistributionChart not found."); }
+
+        // Chart.js - Subject Performance (Radar Chart) - DYNAMIC
+        const subjectAvgCtx = document.getElementById('subjectAverageChart');
+        if (subjectAvgCtx) {
+            new Chart(subjectAvgCtx.getContext('2d'), {
+                type: 'radar',
+                data: {
+                    labels: {{ chart_labels | default('[]') | safe }},
+                    datasets: [{
+                        label: 'Class Average Score',
+                        data: {{ chart_scores | default('[]') | safe }},
+                        fill: true,
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgb(54, 162, 235)',
+                        pointBackgroundColor: 'rgb(54, 162, 235)',
+                    }]
+                },
+                options: {
+                     maintainAspectRatio: false,
+                     elements: { line: { tension: 0, borderWidth: 3 } },
+                     scales: { r: { beginAtZero: true, suggestedMax: 100 } },
+                     plugins: {
+                        tooltip: { callbacks: { label: function(c){ let l = c.dataset.label||''; if(l){l+=': '}; l+=(c.parsed.r||0).toFixed(2)+'%'; return l; } } }
+                     }
+                }
+            });
+        } else { console.error("Canvas element #subjectAverageChart not found."); }
+    </script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Add New Course - Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='faculty_style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Admin Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="{{ url_for('faculty_dashboard') }}">Dashboard</a></li>
+<li><a href="{{ url_for('manage_students') }}" class="active">Students</a></li>
+<li><a href="{{ url_for('manage_courses') }}">Courses</a></li>
+<li><a href="{{ url_for('upload_data') }}">Upload Data</a></li>
+<li><a href="{{ url_for('reports') }}">Reports</a></li>
+<li><a href="{{ url_for('take_attendance') }}">Attendance</a></li>
+<li><a href="{{ url_for('logout') }}">Logout</a></li>
+                    
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Add New Course</h1>
+            </header>
+
+            <section class="add-course-form">
+                <div class="card">
+                    <h3>Course Details Form</h3>
+                    <form action="/create-course" method="POST">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="courseName">Course Name</label>
+                                <input type="text" id="courseName" name="courseName" class="form-control" placeholder="e.g., Introduction to Python" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="courseCode">Course Code</label>
+                                <input type="text" id="courseCode" name="courseCode" class="form-control" placeholder="e.g., CS101" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="courseDescription">Course Description</label>
+                            <textarea id="courseDescription" name="courseDescription" class="form-control" rows="4" placeholder="Enter a brief summary of the course..."></textarea>
+                        </div>
+                        
+                        <div class="form-row">
+                             <div class="form-group">
+                                <label for="instructor">Assign Instructor</label>
+                                <select id="instructor" name="instructor" class="form-control" required>
+                                    <option value="" disabled selected>Select an instructor...</option>
+                                    <option value="prof_davis">Prof. Davis</option>
+                                    <option value="dr_miller">Dr. Miller</option>
+                                    <option value="dr_chen">Dr. Chen</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="semester">Semester</label>
+                                <select id="semester" name="semester" class="form-control" required>
+                                     <option value="" disabled selected>Select a semester...</option>
+                                     <option value="Fall 2025">Fall 2025</option>
+                                     <option value="Spring 2026">Spring 2026</option>
+                                     <option value="Fall 2026">Fall 2026</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="credits">Credits</label>
+                                <input type="number" id="credits" name="credits" class="form-control" placeholder="e.g., 3" min="1" max="5" required>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <a href="manage_courses.html" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Add Course</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

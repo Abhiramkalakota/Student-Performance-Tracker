@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Log - {{ student.get('firstName', '') }} {{ student.get('lastName', '') }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='faculty_style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='student_style.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header"><h2>Admin Panel</h2></div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="{{ url_for('faculty_dashboard') }}">Dashboard</a></li>
+                    <li><a href="{{ url_for('manage_students') }}" class="active">Students</a></li>
+                    <li><a href="{{ url_for('manage_courses') }}">Courses</a></li>
+                    <li><a href="{{ url_for('upload_data') }}">Upload Data</a></li>
+                    <li><a href="{{ url_for('reports') }}">Reports</a></li>
+                    <li><a href="{{ url_for('take_attendance') }}">Attendance</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                 <h1>Full Attendance Log: {{ student.get('firstName', '?') }} {{ student.get('lastName', '?') }} ({{ student.get('studentId', '?') }})</h1>
+                 <div class="header-actions">
+                     <a href="{{ url_for('view_student', student_id=student.get('studentId')) }}" class="btn btn-secondary">Back to Student View</a>
+                </div>
+            </header>
+
+            <section class="attendance-log card" style="margin-top: 20px;">
+                 <h3>All Recorded Attendance ({{ attendance|length }})</h3>
+                 <table>
+                     <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Course</th>
+                            <th>Instructor</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                     <tbody>
+                        {% for log in attendance %}
+                        <tr>
+                            <td>{{ log.get('date', 'N/A') }}</td>
+                            <td>{{ log.get('courseName', '?') }}</td>
+                            <td>{{ log.get('instructor', 'N/A') }}</td>
+                            <td>
+                                 {% set status = log.get('status', '') %}
+                                 {% if status == 'Present' %}
+                                    <span class="status status-present">Present</span>
+                                {% elif status == 'Absent' %}
+                                    <span class="status status-absent">Absent</span>
+                                {% elif status == 'Late' %}
+                                    <span class="status status-late">Late</span>
+                                 {% else %}
+                                    {{ status }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" style="text-align: center;">No attendance records found for this student.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                 </table>
+             </section>
+        </main>
+    </div>
+</body>
+</html>

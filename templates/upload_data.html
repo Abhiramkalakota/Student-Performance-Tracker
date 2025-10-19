@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Data - Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='faculty_style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Flash message styling */
+        .flash-messages {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 20px 0;
+        }
+        .flash-messages li {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        .flash-messages .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .flash-messages .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Admin Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="{{ url_for('faculty_dashboard') }}">Dashboard</a></li>
+                    <li><a href="{{ url_for('manage_students') }}">Students</a></li>
+                    <li><a href="{{ url_for('manage_courses') }}">Courses</a></li>
+                    <li><a href="{{ url_for('upload_data') }}" class="active">Upload Data</a></li>
+                    <li><a href="{{ url_for('reports') }}">Reports</a></li>
+                    <li><a href="{{ url_for('take_attendance') }}">Attendance</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                 
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Upload System Data</h1>
+                <div class="user-profile">
+                    <span>{{ user_name }}</span>
+                </div>
+            </header>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <ul class="flash-messages">
+                {% for category, message in messages %}
+                  <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+                </ul>
+              {% endif %}
+            {% endwith %}
+
+            <section class="upload-section">
+                <div class="card">
+                    <h3>Step 1: Upload Student Data</h3>
+                    <p>File must be `students.csv` with columns: `studentId`, `password`, `firstName`, `lastName`, etc.</p>
+                    <form action="{{ url_for('upload_student_data') }}" method="POST" enctype="multipart/form-data">
+                        <div class="upload-container">
+                            <label for="student-csv-upload" class="upload-area">
+                                <div class="upload-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="48" viewBox="0 96 960 960" width="48"><path d="M453 776V489L338 604l-57-56 200-200 200 200-57 56-115-115v287h-80ZM240 976q-33 0-56.5-23.5T160 896V256q0-33 23.5-56.5T240 176h360l240 240v480q0 33-23.5 56.5T760 976H240Z"/></svg>
+                                </div>
+                                <span>Drag & drop `students.csv` or <strong>click to browse</strong></span>
+                            </label>
+                            <input type="file" id="student-csv-upload" name="student-data-csv" accept=".csv" hidden>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Upload Students</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3>Step 2: Upload Grades Data</h3>
+                    <p>File must be `grades.csv` with columns: `studentId`, `courseName`, `assignmentName`, `score`, etc.</p>
+                    <form action="{{ url_for('upload_grades_data') }}" method="POST" enctype="multipart/form-data">
+                        <div class="upload-container">
+                            <label for="grades-csv-upload" class="upload-area">
+                                <div class="upload-icon">
+                                     <svg xmlns="http://www.w3.org/2000/svg" height="48" viewBox="0 96 960 960" width="48"><path d="M453 776V489L338 604l-57-56 200-200 200 200-57 56-115-115v287h-80ZM240 976q-33 0-56.5-23.5T160 896V256q0-33 23.5-56.5T240 176h360l240 240v480q0 33-23.5 56.5T760 976H240Z"/></svg>
+                                </div>
+                                <span>Drag & drop `grades.csv` or <strong>click to browse</strong></span>
+                            </label>
+                            <input type="file" id="grades-csv-upload" name="grades-data-csv" accept=".csv" hidden>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Upload Grades</button>
+                    </form>
+                </div>
+                
+                <div class="card">
+                     <h3>Step 3: Upload Attendance Data</h3>
+                     <p>File must be `attendance.csv` with columns: `studentId`, `courseName`, `date`, `status`.</p>
+                    <form action="{{ url_for('upload_attendance_data') }}" method="POST" enctype="multipart/form-data">
+                        <div class="upload-container">
+                            <label for="attendance-csv-upload" class="upload-area">
+                                <div class="upload-icon">
+                                     <svg xmlns="http://www.w3.org/2000/svg" height="48" viewBox="0 96 960 960" width="48"><path d="M453 776V489L338 604l-57-56 200-200 200 200-57 56-115-115v287h-80ZM240 976q-33 0-56.5-23.5T160 896V256q0-33 23.5-56.5T240 176h360l240 240v480q0 33-23.5 56.5T760 976H240Z"/></svg>
+                                </div>
+                                <span>Drag & drop `attendance.csv` or <strong>click to browse</strong></span>
+                            </label>
+                            <input type="file" id="attendance-csv-upload" name="attendance-data-csv" accept=".csv" hidden>
+                        </div>
+                         <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Upload Attendance</button>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script>
+        // Script to show filename on upload
+        function handleFileUpload(inputId, labelSpanQuery) {
+            const fileUpload = document.getElementById(inputId);
+            const uploadArea = document.querySelector(labelSpanQuery);
+            if (fileUpload && uploadArea) {
+                fileUpload.addEventListener('change', function() {
+                    if (this.files && this.files.length > 0) {
+                        uploadArea.innerHTML = `Selected file: <strong>${this.files[0].name}</strong>`;
+                    }
+                });
+            }
+        }
+        handleFileUpload('student-csv-upload', 'label[for="student-csv-upload"] span');
+        handleFileUpload('grades-csv-upload', 'label[for="grades-csv-upload"] span');
+        handleFileUpload('attendance-csv-upload', 'label[for="attendance-csv-upload"] span');
+    </script>
+</body>
+</html>

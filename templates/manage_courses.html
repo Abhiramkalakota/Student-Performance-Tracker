@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Courses - Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='faculty_style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Admin Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="{{ url_for('faculty_dashboard') }}">Dashboard</a></li>
+                    <li><a href="{{ url_for('manage_students') }}">Students</a></li>
+                    <li><a href="{{ url_for('manage_courses') }}" class="active">Courses</a></li>
+                    <li><a href="{{ url_for('upload_data') }}">Upload Data</a></li>
+                    <li><a href="{{ url_for('reports') }}">Reports</a></li>
+                    <li><a href="{{ url_for('take_attendance') }}">Attendance</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                    
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Manage Courses</h1>
+                <div class="header-actions">
+                    <a href="{{ url_for('add_course') }}" class="btn btn-primary">Add New Course</a>
+                </div>
+            </header>
+
+            <section class="kpi-cards">
+                {% for course in course_list %}
+                <div class="card">
+                    <h3>{{ course.name }}</h3>
+                    <p>{{ course.student_count }} Students</p>
+                    <span>Fall 2025 Semester</span> <div class="card-actions">
+                        <a href="{{ url_for('course_roster', course_name=course.name.replace(' ', '+')) }}" class="btn-action">View Roster</a>
+                        {# Enable Edit only if course code exists (i.e., not an inferred course) #}
+                        {% if course.code %}
+                            <a href="{{ url_for('edit_course', course_code=course.code) }}" class="btn-action">Edit</a>
+                        {% else %}
+                            <button class="btn-action btn-disabled" disabled title="Cannot edit inferred courses">Edit</button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="card">
+                    <p>No courses found. Please upload grade or attendance data.</p>
+                </div>
+                {% endfor %}
+            </section>
+        </main>
+    </div>
+</body>
+</html>

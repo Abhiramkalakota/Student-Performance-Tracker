@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Take Attendance - Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='faculty_style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Flash message styling */
+        .flash-messages { list-style: none; padding: 0; margin: 0 0 20px 0; }
+        .flash-messages li { padding: 15px; margin-bottom: 10px; border-radius: 5px; font-weight: 500; }
+        .flash-messages .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .flash-messages .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Admin Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="{{ url_for('faculty_dashboard') }}">Dashboard</a></li>
+                    <li><a href="{{ url_for('manage_students') }}">Students</a></li>
+                    <li><a href="{{ url_for('manage_courses') }}">Courses</a></li>
+                    <li><a href="{{ url_for('upload_data') }}">Upload Data</a></li>
+                    <li><a href="{{ url_for('reports') }}">Reports</a></li>
+                    <li><a href="{{ url_for('take_attendance') }}" class="active">Attendance</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Take Attendance</h1>
+            </header>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <ul class="flash-messages">
+                {% for category, message in messages %}
+                  <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+                </ul>
+              {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('submit_attendance') }}" method="POST">
+                <div class="card">
+                    <h3>Select Course and Date</h3>
+                    <div class="filter-bar">
+                        <div class="form-group">
+                            <label for="course-select">Course:</label>
+                            <select id="course-select" name="course" class="form-control" required>
+                                <option value="" disabled selected>Choose a course...</option>
+                                {% for course in courses %}
+                                <option value="{{ course }}">{{ course }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="attendance-date">Date:</label>
+                            <input type="date" id="attendance-date" name="date" class="form-control" required>
+                        </div>
+                        <button type="button" id="load-roster-btn" class="btn btn-secondary">Load Roster</button>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 20px;">
+                    <h3>Student Roster</h3>
+                    <div class="attendance-table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Student ID</th>
+                                    <th>Name</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="roster-table-body">
+                                <tr>
+                                    <td colspan="3" style="text-align: center;">Please select a course and click "Load Roster".</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                     <div class="form-actions" id="submit-container" style="display: none; margin-top: 20px; text-align: right;">
+                        <button type="submit" class="btn btn-primary">Submit Attendance</button>
+                    </div>
+                </div>
+            </form>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set the default date to today
+            const dateInput = document.getElementById('attendance-date');
+            if(dateInput) {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+                const day = String(today.getDate()).padStart(2, '0');
+                dateInput.value = `${year}-${month}-${day}`;
+            }
+
+            const loadRosterBtn = document.getElementById('load-roster-btn');
+            const courseSelect = document.getElementById('course-select');
+            const rosterTableBody = document.getElementById('roster-table-body');
+            const submitContainer = document.getElementById('submit-container');
+
+            // Listen for clicks on the "Load Roster" button
+            loadRosterBtn.addEventListener('click', async function() {
+                const courseName = courseSelect.value;
+                if (!courseName) {
+                    alert('Please select a course first.');
+                    return;
+                }
+
+                rosterTableBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Loading...</td></tr>';
+
+                try {
+                    // Fetch the roster from our new API endpoint
+                    const response = await fetch(`/api/get_roster/${courseName.replace(' ', '+')}`);
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to load roster from server.');
+                    }
+                    
+                    const roster = await response.json();
+
+                    if (roster.error) {
+                         throw new Error(roster.error);
+                    }
+
+                    if (roster.length === 0) {
+                        rosterTableBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No students found for this course.</td></tr>';
+                        submitContainer.style.display = 'none';
+                        return;
+                    }
+
+                    // Build the table rows dynamically
+                    let tableHtml = '';
+                    roster.forEach(student => {
+                        tableHtml += `
+                            <tr>
+                                <td>${student.id}</td>
+                                <td>${student.name}</td>
+                                <td>
+                                    <div class="attendance-options">
+                                        <input type="radio" id="present_${student.id}" name="attendance_${student.id}" value="Present" checked>
+                                        <label for="present_${student.id}">Present</label>
+                                        
+                                        <input type="radio" id="absent_${student.id}" name="attendance_${student.id}" value="Absent">
+                                        <label for="absent_${student.id}">Absent</label>
+                                        
+                                        <input type="radio" id="late_${student.id}" name="attendance_${student.id}" value="Late">
+                                        <label for="late_${student.id}">Late</label>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    rosterTableBody.innerHTML = tableHtml;
+                    submitContainer.style.display = 'block'; // Show the submit button
+
+                } catch (error) {
+                    console.error('Error loading roster:', error);
+                    rosterTableBody.innerHTML = `<tr><td colspan="3" style="text-align: center;">Error: ${error.message}</td></tr>`;
+                    submitContainer.style.display = 'none';
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
