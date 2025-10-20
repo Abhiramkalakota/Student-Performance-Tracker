@@ -1,8 +1,8 @@
 courseCode,courseName,description,instructor,semester,credits,facultyId
-MATH101,Mathematics,Introductory calculus...,Dr. Alan Turing,Fall 2025,4,prof_turing
-PHY201,Physics,Classical mechanics...,Dr. Marie Curie,Fall 2025,4,prof_curie
+MATH101,Mathematics,Introductory calculus...,Dr. Alan Turing,Fall 2025,4,prof_davis
+PHY201,Physics,Classical mechanics...,Dr. Marie Curie,Fall 2025,4,prof_davis
 CS305,Computer Science,Fundamental data structures...,Dr. Ada Lovelace,Fall 2025,3,prof_davis
 HIST102,History,Survey of world history...,Dr. Ibn Khaldun,Fall 2025,3,prof_khaldun
 ENG101,English,Introduction to literary analysis...,Dr. William Shakespeare,Fall 2025,3,prof_shakespeare
 CS101,Introduction to Python,Basics of Python programming...,Dr. Ada Lovelace,Spring 2026,4,prof_davis
-PHY301,Quantum Physics,Introduction to quantum mechanics...,Dr. Marie Curie,Spring 2026,4,prof_curie
+PHY301,Quantum Physics,Introduction to quantum mechanics...,Dr. Marie Curie,Spring 2026,4,prof_davis

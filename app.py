@@ -3,7 +3,8 @@ import os
 import csv
 import json
 import traceback
-from flask import Flask, request, redirect, url_for, jsonify, render_template, session, flash
+import functools
+from flask import Flask, request, redirect, url_for, jsonify, render_template, session, flash, make_response
 from werkzeug.utils import secure_filename
 
 # 2. Initialize Flask App
@@ -16,6 +17,18 @@ UPLOAD_FOLDER = 'uploads'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+def no_cache(view):
+    """Decorator to add headers to prevent caching."""
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        response = make_response(view(**kwargs))
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '-1' # Or 0
+        return response
+    return wrapped_view
 
 
 # =================================================================
@@ -116,27 +129,46 @@ def index():
 def login():
     username = request.form.get('username')
     password = request.form.get('password')
+    # NEW: Get the role selected by the user from the hidden input
+    submitted_role = request.form.get('role', 'student') # Default to 'student' if missing
 
     session.clear() # Clear any old session
 
-    # Check faculty
-    if username in faculty_users and faculty_users[username]['password'] == password:
-        session['user_id'] = username
-        session['role'] = 'faculty'
-        session['name'] = faculty_users[username]['name']
-        return redirect(url_for('faculty_dashboard'))
+    login_successful = False
+    error_message = f"Invalid {submitted_role} username or password"
 
-    # Check student
-    if username in student_login_data and student_login_data[username]['password'] == password:
-        session['user_id'] = username
-        session['role'] = 'student'
-        # Load profile for easy access
-        profile = student_profile_data.get(username, {})
-        session['name'] = profile.get('firstName', 'Student')
-        return redirect(url_for('student_dashboard'))
+    # Check FACULTY only if the submitted role is 'faculty'
+    if submitted_role == 'faculty':
+        if username in faculty_users and faculty_users[username]['password'] == password:
+            session['user_id'] = username
+            session['role'] = 'faculty'
+            session['name'] = faculty_users[username]['name']
+            login_successful = True
+            print(f"Faculty login successful: {username}")
+            return redirect(url_for('faculty_dashboard'))
+        else:
+             print(f"Faculty login failed for: {username}")
 
-    # If login fails
-    flash('Invalid username or password', 'error')
+    # Check STUDENT only if the submitted role is 'student'
+    elif submitted_role == 'student':
+        if username in student_login_data and student_login_data[username]['password'] == password:
+            session['user_id'] = username
+            session['role'] = 'student'
+            profile = student_profile_data.get(username, {})
+            session['name'] = profile.get('firstName', 'Student')
+            login_successful = True
+            print(f"Student login successful: {username}")
+            return redirect(url_for('student_dashboard'))
+        else:
+            print(f"Student login failed for: {username}")
+
+    # If login failed after checking the specific role
+    if not login_successful:
+        flash(error_message, 'error')
+        return redirect(url_for('index'))
+
+    # Fallback (shouldn't normally be reached)
+    flash('An unexpected login error occurred.', 'error')
     return redirect(url_for('index'))
 
 @app.route('/logout')
@@ -148,122 +180,187 @@ def logout():
 # =================================================================
 # 5. SERVER ROUTES - STUDENT (Analytics & Visualization)
 # =================================================================
+# --- Route to DISPLAY the full gradebook for a student ---
+@app.route('/student_gradebook/<student_id>') # Check: Route path includes <student_id>
+def student_gradebook(student_id):            # Check: Function name is student_gradebook
+    """Displays the full gradebook for a specific student."""
+    if not check_faculty_auth(): return redirect(url_for('index')) # Check authentication
+    profile = student_profile_data.get(student_id) # Get student profile
+    if not profile:
+        flash(f"Student '{student_id}' not found.",'error') # Handle if student doesn't exist
+        return redirect(url_for('manage_students'))
 
+    grades = student_grades_data.get(student_id, []) # Get all grades for this student
+    # Sort grades by date for display
+    sorted_grades = sorted([g for g in grades if g.get('dateGraded')], key=lambda x:x['dateGraded'], reverse=True)
+
+    # Render the specific gradebook template
+    return render_template('student_gradebook.html',
+                           user_name=session.get('name', '?'),
+                           student=profile,
+                           grades=sorted_grades)
 def check_student_auth():
     """Helper to check if a user is a logged-in student."""
     return session.get('role') == 'student'
-
-@app.route('/student_dashboard')
-def student_dashboard():
-    if not check_student_auth():
-        return redirect(url_for('index'))
-
-    student_id = session['user_id']
-    profile = student_profile_data.get(student_id, {})
-    grades = student_grades_data.get(student_id, [])
-
-    # --- ANALYTICS LOGIC ---
-    total_score = 0
-    subjects = {}
-
-    # Sort grades by date safely, handling potential None values or missing keys
-    safe_grades_for_sort = [g for g in grades if g.get('dateGraded')]
-    recent_grades = sorted(safe_grades_for_sort, key=lambda x: x['dateGraded'], reverse=True)[:3]
-
-
-    if grades:
-        for g in grades:
-            try:
-                # Safely get score and courseName, provide defaults
-                score_str = g.get('score')
-                subject = g.get('courseName', 'Unknown')
-
-                # Skip if score is missing or cannot be converted to float
-                if score_str is None:
-                    continue
-                score = float(score_str)
-
-                total_score += score
-
-                if subject not in subjects:
-                    subjects[subject] = {'total': 0, 'count': 0}
-                subjects[subject]['total'] += score
-                subjects[subject]['count'] += 1
-            except (ValueError, TypeError): # Catch errors during float conversion
-                print(f"Warning: Skipping grade due to invalid score format in student {student_id}: {g}")
-                continue # Skip if score is not a valid number
-
-    overall_grade = (total_score / len(grades)) if grades else 0
-
-    # Data for the bar chart
-    chart_labels = list(subjects.keys())
-    chart_scores = []
-    for subject in chart_labels:
-        # Avoid division by zero if count is somehow 0
-        avg = (subjects[subject]['total'] / subjects[subject]['count']) if subjects[subject]['count'] > 0 else 0
-        chart_scores.append(round(avg, 2))
-    # --- END ANALYTICS ---
-
-    return render_template(
-        'student_dashboard.html',
-        user_name=session['name'],
-        profile=profile,
-        overall_grade=round(overall_grade, 2),
-        recent_grades=recent_grades,
-        chart_labels=json.dumps(chart_labels),
-        chart_scores=json.dumps(chart_scores)
-    )
 
     
     # ... (rest of the delete logic) ...
     
     return redirect(url_for('manage_students'))
-@app.route('/my_courses')
-def my_courses():
-    if not check_student_auth():
-        return redirect(url_for('index'))
+# --- NEW ROUTE: Display Edit Student Form ---
+@app.route('/edit_student/<student_id>')
+def edit_student(student_id):
+    if not check_faculty_auth(): return redirect(url_for('index'))
 
+    student_details = student_profile_data.get(student_id)
+    if not student_details or not isinstance(student_details, dict):
+        flash(f"Student with ID '{student_id}' not found.", 'error')
+        return redirect(url_for('manage_students'))
+
+    return render_template(
+        'edit_student.html',
+        user_name=session.get('name', '?'),
+        student=student_details # Pass current student data to the form
+    )
+
+# --- NEW ROUTE: Handle Update Student Form Submission ---
+@app.route('/update_student/<student_id>', methods=['POST'])
+def update_student(student_id):
+    if not check_faculty_auth(): return redirect(url_for('index'))
+
+    original_student = student_profile_data.get(student_id)
+    if not original_student or not isinstance(original_student, dict):
+        flash(f"Student '{student_id}' not found for update.", 'error')
+        return redirect(url_for('manage_students'))
+
+    try:
+        # 1. Get updated form data
+        updated_data = {
+            'studentId': student_id, # Keep original ID
+            'firstName': request.form.get('firstName','').strip(),
+            'lastName': request.form.get('lastName','').strip(),
+            'email': request.form.get('email','').strip(),
+            'dob': request.form.get('dob',''),
+            'enrollmentDate': request.form.get('enrollmentDate',''),
+            'major': request.form.get('major','Undeclared').strip(),
+            'program': request.form.get('program','Undeclared').strip(),
+            'gpa': request.form.get('gpa','0.0').strip(),
+            # Handle password update
+            'password': request.form.get('password') # Get new password (if entered)
+        }
+        confirm_password = request.form.get('confirmPassword')
+
+        # 2. Basic Validation
+        required = ['firstName', 'lastName', 'email', 'enrollmentDate', 'dob'] # Student ID is from URL
+        if not all(updated_data.get(f) for f in required):
+            flash('Required fields cannot be empty.', 'error')
+            return redirect(url_for('edit_student', student_id=student_id))
+
+        # Password validation (only if new password entered)
+        if updated_data['password']: # If a new password was entered
+            if updated_data['password'] != confirm_password:
+                flash('New passwords do not match.', 'error')
+                return redirect(url_for('edit_student', student_id=student_id))
+        else:
+            # If new password field is blank, keep the old password
+            updated_data['password'] = original_student.get('password') # Keep existing password
+
+        # 3. Update in-memory dictionaries
+        student_profile_data[student_id] = updated_data # Update profile
+        if student_id in student_login_data: # Update login if exists
+            student_login_data[student_id]['password'] = updated_data['password']
+        else: # Add login if somehow missing
+             student_login_data[student_id] = {'password': updated_data['password'], 'role': 'student'}
+
+        print(f"Updated student data in memory for {student_id}") # Debug print
+
+        # 4. Rewrite the entire students.csv file
+        all_students = list(student_profile_data.values())
+        headers = STUDENT_HEADERS # Use defined headers
+        try:
+            # Determine headers robustly
+            if os.path.isfile(STUDENTS_CSV) and os.path.getsize(STUDENTS_CSV) > 0:
+                 with open(STUDENTS_CSV, 'r', newline='', encoding='utf-8') as f_read:
+                     csv_headers = next(csv.reader(f_read))
+                     if all(h in csv_headers for h in STUDENT_HEADERS): headers = csv_headers
+            # Write all students (including the updated one)
+            with open(STUDENTS_CSV, mode='w', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(f, fieldnames=headers, extrasaction='ignore')
+                writer.writeheader()
+                writer.writerows(all_students)
+            flash(f"Student '{updated_data['firstName']}' updated successfully!", 'success')
+            print(f"Rewrote {STUDENTS_CSV} successfully after update.") # Debug print
+        except Exception as e:
+            flash(f"Error rewriting {STUDENTS_CSV}: {e}", 'error')
+            print(f"Error rewriting {STUDENTS_CSV}: {e}"); traceback.print_exc()
+            # !! Consider rolling back in-memory change if CSV write fails !!
+            # student_profile_data[student_id] = original_student # Example rollback
+
+        return redirect(url_for('manage_students')) # Redirect back to the list
+
+    except Exception as e:
+        flash(f"An error occurred during update: {e}", 'error')
+        print(f"Error during update_student for {student_id}: {e}"); traceback.print_exc()
+        return redirect(url_for('edit_student', student_id=student_id)) # Redirect back to edit form
+
+# --- UPDATED: MY COURSES Route ---
+@app.route('/my_courses')
+@no_cache
+def my_courses():
+    if not check_student_auth(): return redirect(url_for('index'))
     student_id = session['user_id']
     grades = student_grades_data.get(student_id, [])
-    attendance_log = student_attendance_data.get(student_id, [])
+    attendance = student_attendance_data.get(student_id, [])
 
-    # --- ANALYTICS ---
+    # --- Analytics ---
+    student_courses = set() # Track all unique course names for this student
+    course_progress = {}    # Track grade progress {courseName: {total: x, count: y}}
 
-    # Create a map of course names to instructors
-    course_instructors = {}
-    for record in attendance_log:
-        course_name = record.get('courseName')
-        # Only add if course_name is valid
-        if course_name and course_name not in course_instructors:
-             course_instructors[course_name] = record.get('instructor', 'N/A')
-
-    # Calculate progress based on grades
-    courses = {}
+    # 1. Get course names and calculate progress from grades
     for g in grades:
-        name = g.get('courseName')
-        score_str = g.get('score')
-        # Only process if name and score are valid
+        name, score_str = g.get('courseName'), g.get('score')
+        if name: student_courses.add(name) # Add course name
         if name and score_str is not None:
-            if name not in courses:
-                courses[name] = {'total': 0, 'count': 0}
-            try:
-                courses[name]['total'] += float(score_str)
-                courses[name]['count'] += 1
-            except (ValueError, TypeError):
-                 print(f"Warning: Skipping grade due to invalid score format in my_courses for student {student_id}: {g}")
-                 continue
+            if name not in course_progress: course_progress[name]={'total':0,'count':0}
+            try: course_progress[name]['total']+=float(score_str); course_progress[name]['count']+=1
+            except (ValueError, TypeError): continue
 
+    # 2. Get course names from attendance (in case no grades exist yet)
+    for att in attendance:
+        name = att.get('courseName')
+        if name: student_courses.add(name)
+
+    # 3. Build the final list, getting instructor primarily from main course_data
     course_list = []
-    for name, data in courses.items():
-        progress = (data['total'] / data['count']) if data['count'] > 0 else 0
+    for name in sorted(list(student_courses)):
+        # Calculate progress
+        progress_data = course_progress.get(name, {'count': 0})
+        prog = int(round((progress_data.get('total',0)/(progress_data.get('count',1) or 1)),0)) # Avoid div by zero
+
+        # Find instructor - PRIORITIZE courses.csv data
+        instructor_name = "N/A"
+        found_in_main_data = False
+        for code, details in course_data.items():
+            if isinstance(details, dict) and details.get('courseName') == name:
+                instructor_name = details.get('instructor', 'N/A') # Get official instructor name
+                found_in_main_data = True
+                break
+
+        # Fallback: If not in courses.csv, try finding from student's attendance log (less reliable)
+        if not found_in_main_data:
+            for att in attendance:
+                 if att.get('courseName') == name and att.get('instructor'):
+                     instructor_name = att.get('instructor')
+                     break # Take the first one found
+
         course_list.append({
             'name': name,
-            'progress': round(progress),
-            'instructor': course_instructors.get(name, 'N/A') # Get instructor from map
+            'progress': prog,
+            'instructor': instructor_name
         })
-    # --- END ANALYTICS ---
+    # --- END Analytics ---
 
-    return render_template('my_courses.html', user_name=session['name'], course_list=course_list)
+    return render_template('my_courses.html', user_name=session.get('name','?'), course_list=course_list)
 
 @app.route('/grades')
 def grades():
@@ -494,6 +591,7 @@ def update_course(course_code):
 # (Keep all other existing routes: faculty_dashboard, uploads, student routes, attendance, reports, etc.)
 # ...
 @app.route('/attendance')
+@no_cache
 def attendance():
     if not check_student_auth():
         return redirect(url_for('index'))
@@ -563,6 +661,7 @@ def attendance():
     )
 
 @app.route('/profile')
+@no_cache
 def profile():
     if not check_student_auth():
         return redirect(url_for('index'))
@@ -614,6 +713,7 @@ def is_faculty_authorized_for_course(faculty_id, course_name):
     return True
 
 @app.route('/faculty_dashboard')
+@no_cache
 def faculty_dashboard():
     if not check_faculty_auth(): return redirect(url_for('index'))
     total_students = len(student_profile_data)
@@ -688,23 +788,101 @@ def faculty_profile():
         faculty_info=faculty_info_display
         )
 # --- END NEW ROUTE ---
-@app.route('/student_gradebook/<student_id>')
-def student_gradebook(student_id):
-    """Displays the full gradebook for a specific student."""
-    if not check_faculty_auth(): return redirect(url_for('index'))
-    profile = student_profile_data.get(student_id)
-    if not profile:
-        flash(f"Student '{student_id}' not found.",'error')
-        return redirect(url_for('manage_students'))
+# --- NEW ROUTE: Course Details for Student ---
+@app.route('/course_details/<course_name>')
+def course_details(course_name):
+    if not check_student_auth(): return redirect(url_for('index'))
+    student_id = session['user_id']
+    safe_course_name = course_name.replace('+', ' ') # Decode course name from URL
 
-    grades = student_grades_data.get(student_id, [])
-    # Sort grades by date for display
-    sorted_grades = sorted([g for g in grades if g.get('dateGraded')], key=lambda x:x['dateGraded'], reverse=True)
+    # 1. Filter grades for this student and this course
+    all_grades = student_grades_data.get(student_id, [])
+    course_grades = [g for g in all_grades if g.get('courseName') == safe_course_name]
 
-    return render_template('student_gradebook.html',
+    # 2. Filter attendance for this student and this course
+    all_attendance = student_attendance_data.get(student_id, [])
+    course_attendance = [a for a in all_attendance if a.get('courseName') == safe_course_name]
+
+    # 3. Calculate stats specific to this course
+    total_score, count_g = 0, 0
+    for g in course_grades:
+        try: score_str = g.get('score'); total_score += float(score_str or 0); count_g += 1 if score_str is not None else 0
+        except (ValueError, TypeError): pass
+    course_average = round((total_score / count_g), 2) if count_g > 0 else None # Use None if no grades
+
+    total_c = len(course_attendance); present = sum(1 for a in course_attendance if a.get('status') in ['Present','Late'])
+    course_attendance_perc = int(round((present / total_c) * 100, 0)) if total_c > 0 else None # Use None if no attendance
+
+    # 4. Find Instructor (look in attendance first, then course_data)
+    instructor = "N/A"
+    for att in course_attendance:
+        if att.get('instructor'): instructor = att['instructor']; break
+    if instructor == "N/A": # Fallback to course_data
+         for _, c_info in course_data.items():
+             if isinstance(c_info, dict) and c_info.get('courseName') == safe_course_name and c_info.get('instructor'):
+                 instructor = c_info['instructor']; break
+
+    # Sort grades and attendance by date
+    sorted_grades = sorted([g for g in course_grades if g.get('dateGraded')], key=lambda x:x['dateGraded'], reverse=True)
+    sorted_attendance = sorted([a for a in course_attendance if a.get('date')], key=lambda x:x['date'], reverse=True)
+
+
+    return render_template('course_details.html',
                            user_name=session.get('name', '?'),
-                           student=profile,
-                           grades=sorted_grades)
+                           course_name=safe_course_name,
+                           course_grades=sorted_grades,
+                           course_attendance=sorted_attendance,
+                           course_average=course_average,
+                           course_attendance_perc=course_attendance_perc,
+                           instructor=instructor
+                           )
+# --- END NEW ROUTE ---
+@app.route('/student_dashboard')
+@no_cache
+def student_dashboard():
+    if not check_student_auth(): return redirect(url_for('index'))
+    student_id = session['user_id']
+    profile = student_profile_data.get(student_id, {})
+    grades = student_grades_data.get(student_id, [])
+    # NEW: Get attendance log for calculations
+    attendance_log = student_attendance_data.get(student_id, [])
+
+    # --- Grade Analytics (Existing) ---
+    total_score, subjects, valid_grade_count = 0, {}, 0
+    safe_grades = sorted([g for g in grades if g.get('dateGraded')], key=lambda x: x['dateGraded'], reverse=True)
+    recent_grades = safe_grades[:3]
+    for g in grades:
+        try:
+            score_str, subj = g.get('score'), g.get('courseName', '?');
+            if score_str is None or not subj: continue
+            score = float(score_str); total_score += score; valid_grade_count += 1
+            if subj not in subjects: subjects[subj] = {'total': 0, 'count': 0}
+            subjects[subj]['total'] += score; subjects[subj]['count'] += 1
+        except (ValueError, TypeError): continue
+    overall_grade = round((total_score / valid_grade_count), 2) if valid_grade_count > 0 else 0
+    labels = list(subjects.keys()); scores = [round((subjects[s]['total']/subjects[s]['count']),2) if subjects[s]['count']>0 else 0 for s in labels]
+
+    # --- NEW: Attendance Analytics ---
+    total_classes = len(attendance_log)
+    present_count = sum(1 for a in attendance_log if a.get('status') in ['Present','Late'])
+    overall_attendance_perc = int(round((present_count / total_classes) * 100, 0)) if total_classes > 0 else 0 # Calculate percentage
+
+    # Determine attendance description (optional)
+    attendance_desc = "Excellent" if overall_attendance_perc >= 90 else "Good" if overall_attendance_perc >= 80 else "Needs Improvement" if overall_attendance_perc >= 70 else "Poor" if total_classes > 0 else "N/A"
+    # --- END NEW ---
+
+
+    return render_template('student_dashboard.html',
+                           user_name=session.get('name', '?'),
+                           profile=profile,
+                           overall_grade=overall_grade,
+                           recent_grades=recent_grades,
+                           chart_labels=json.dumps(labels),
+                           chart_scores=json.dumps(scores),
+                           # NEW: Pass attendance data
+                           overall_attendance=overall_attendance_perc,
+                           attendance_description=attendance_desc
+                           )
 
 @app.route('/student_attendance_log/<student_id>')
 def student_attendance_log(student_id):
@@ -726,12 +904,14 @@ def student_attendance_log(student_id):
 
 # --- END OF NEW ROUTES ---
 @app.route('/upload_data')
+@no_cache
 def upload_data():
     if not check_faculty_auth():
         return redirect(url_for('index'))
     return render_template('upload_data.html', user_name=session['name'])
 # --- ADD THIS COMPLETE FUNCTION ---
 @app.route('/view_student/<student_id>')
+@no_cache
 def view_student(student_id):
     if not check_faculty_auth(): return redirect(url_for('index'))
     profile = student_profile_data.get(student_id)
@@ -769,6 +949,7 @@ def view_student(student_id):
 
 # --- Keep the existing delete_student route definition ---
 @app.route('/delete_student/<student_id>', methods=['POST'])
+@no_cache
 def delete_student(student_id):
     # Delete a student from in-memory stores and attempt to persist changes to students.csv
     if not check_faculty_auth():
@@ -813,6 +994,7 @@ def delete_student(student_id):
 
 # ... (rest of your app.py code) ...
 @app.route('/upload-student-data', methods=['POST'])
+@no_cache
 def upload_student_data():
     if not check_faculty_auth():
         return "Unauthorized", 403
@@ -856,6 +1038,7 @@ def upload_student_data():
     return redirect(url_for('upload_data'))
 
 @app.route('/upload-grades-data', methods=['POST'])
+@no_cache
 def upload_grades_data():
     if not check_faculty_auth():
         return "Unauthorized", 403
@@ -883,6 +1066,7 @@ def upload_grades_data():
     return redirect(url_for('upload_data'))
 
 @app.route('/upload-attendance-data', methods=['POST'])
+@no_cache
 def upload_attendance_data():
     if not check_faculty_auth():
         return "Unauthorized", 403
@@ -911,6 +1095,7 @@ def upload_attendance_data():
 
 
 @app.route('/manage_students')
+@no_cache
 def manage_students():
     if not check_faculty_auth():
         return redirect(url_for('index'))
@@ -960,6 +1145,7 @@ def manage_students():
 
 # --- API ROUTE FOR ROSTER ---
 @app.route('/api/get_roster/<course_name>')
+@no_cache
 def get_roster_api(course_name):
     if not check_faculty_auth():
         return jsonify({"error": "Unauthorized"}), 403
@@ -991,6 +1177,7 @@ def get_roster_api(course_name):
 
 # --- SUBMIT ROUTE FOR ATTENDANCE ---
 @app.route('/submit_attendance', methods=['POST'])
+@no_cache
 def submit_attendance():
     if not check_faculty_auth():
         return redirect(url_for('index'))
@@ -1091,6 +1278,7 @@ def submit_attendance():
 
 # --- ROUTE TO CREATE STUDENT ---
 @app.route('/create_student', methods=['POST'])
+@no_cache
 def create_student():
     if not check_faculty_auth(): return redirect(url_for('index')) # Check if logged-in user is faculty
     try:
@@ -1159,6 +1347,7 @@ def create_student():
         print(traceback.format_exc()) # Log the full error details to the console
         return redirect(url_for('add_student')) # Go back to the form on error
 @app.route('/reports')
+@no_cache
 def reports():
     if not check_faculty_auth():
         return redirect(url_for('index'))
@@ -1216,6 +1405,7 @@ def reports():
     )
 
 @app.route('/take_attendance')
+@no_cache
 def take_attendance():
     if not check_faculty_auth():
         return redirect(url_for('index'))
@@ -1241,6 +1431,7 @@ def take_attendance():
     )
 
 @app.route('/add_student')
+@no_cache
 def add_student():
     if not check_faculty_auth():
         return redirect(url_for('index'))
@@ -1252,6 +1443,7 @@ def add_student():
 
 
 @app.route('/add_course')
+@no_cache
 def add_course():
     if not check_faculty_auth():
         return redirect(url_for('index'))
@@ -1261,6 +1453,7 @@ def add_course():
 # Add a route to handle the actual creation of the course (similar to create_student)
 # This would typically involve saving to a 'courses.csv' or database
 @app.route('/create_course', methods=['POST'])
+@no_cache
 def create_course():
      if not check_faculty_auth():
          return redirect(url_for('index'))
@@ -1286,6 +1479,7 @@ def create_course():
 
 # --- MODIFIED: course_roster route ---
 @app.route('/course_roster/<course_name>')
+@no_cache
 def course_roster(course_name):
     if not check_faculty_auth(): return redirect(url_for('index'))
     s_name = course_name.replace('+', ' ')
@@ -1330,6 +1524,7 @@ def course_roster(course_name):
 
 # --- NEW ROUTE: Enroll Student (adds placeholder attendance) ---
 @app.route('/enroll_student', methods=['POST'])
+@no_cache
 def enroll_student():
     if not check_faculty_auth(): return redirect(url_for('index'))
     faculty_id = session.get('user_id')
@@ -1404,6 +1599,7 @@ def enroll_student():
 
 # --- Generic page renderer for static files (if any are left) ---
 @app.route('/page/<page_name>')
+@no_cache
 def render_page(page_name):
     # Basic security: prevent access to sensitive files
     if '..' in page_name or page_name.startswith('/'):
