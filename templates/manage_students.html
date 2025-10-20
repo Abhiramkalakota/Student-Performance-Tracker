@@ -96,7 +96,8 @@
                             <td data-label="Attendance">{{ student.attendance }}%</td>
                             <td data-label="Actions">
                                 <a href="{{ url_for('view_student', student_id=student.id) }}" class="btn-action">View</a>
-                                <button class="btn-action btn-disabled" disabled>Edit</button>
+                                
+<a href="{{ url_for('edit_student', student_id=student.id) }}" class="btn-action">Edit</a>
                                 <form action="{{ url_for('delete_student', student_id=student.id) }}" method="POST" class="delete-form" onsubmit="return confirm('Delete student {{ student.name }} ({{ student.id }})?');">
                                     <button type="submit" class="btn-action btn-action-delete">Delete</button>
                                 </form>

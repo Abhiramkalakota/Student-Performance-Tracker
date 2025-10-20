@@ -46,7 +46,7 @@
                             <div class="progress" style="width: {{ course.progress }}%;"></div>
                         </div>
                     </div>
-                    <a href="#" class="btn-view-course">View Details</a>
+                    <a href="{{ url_for('course_details', course_name=course.name.replace(' ', '+')) }}" class="btn-view-course">View Details</a>
                 </div>
                 {% else %}
                 <p>No courses found. Grades may not have been uploaded yet.</p>
