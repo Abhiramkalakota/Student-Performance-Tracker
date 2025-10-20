@@ -1,0 +1,106 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class$
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Flask specific files
+instance/
+.webassets-cache
+
+# PyInstaller
+# Usually stuff dumped PyInstaller's usual places
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+coverage_html_report/ # For pytest-cov html reports
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Virtual Environments - IMPORTANT!
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+/env/
+/venv/
+/.venv/
+/.env/
+
+# IDE / Editor directories
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary uploads folder (if used for processing before saving)
+uploads/
+
+# Log files
+*.log
+logs/
+
+# Sensitive configuration files (if you use python-dotenv)
+.env
+.flaskenv
+
+# If using Sass cache
+.sass-cache/
+
+# If using any database files directly (like SQLite)
+*.db
+*.sqlite
+*.sqlite3
