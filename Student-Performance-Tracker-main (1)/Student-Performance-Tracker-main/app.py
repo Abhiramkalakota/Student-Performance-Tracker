@@ -1615,25 +1615,34 @@ def render_page(page_name):
 # =================================================================
 if __name__ == '__main__':
     # Try to load existing CSVs on startup
-    load_data_from_csv('students.csv', student_profile_data, 'studentId', is_list=False)
-    # Populate login data from the loaded profile data AFTER it's loaded
-    student_login_data.clear() # Ensure it's empty before populating
+    # Load CSVs from /data directory (Render-friendly)
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    DATA_DIR = os.path.join(BASE_DIR, "data")
+
+    # Load student profiles
+    load_data_from_csv(os.path.join(DATA_DIR, "students.csv"), student_profile_data, 'studentId', is_list=False)
+
+    # Populate login data
+    student_login_data.clear()
     for student_id, profile in student_profile_data.items():
-        # Check if profile is a dictionary and has 'password' key
         if isinstance(profile, dict) and profile.get('password'):
             student_login_data[student_id] = {
-                'password': profile.get('password'),
+                'password': profile['password'],
                 'role': 'student'
             }
 
-    load_data_from_csv('grades.csv', student_grades_data, 'studentId', is_list=True)
-    load_data_from_csv('attendance.csv', student_attendance_data, 'studentId', is_list=True)
+    # Load grades
+    load_data_from_csv(os.path.join(DATA_DIR, "grades.csv"), student_grades_data, 'studentId', is_list=True)
 
-    # Load courses if present so course_data is available to course-management routes
+    # Load attendance
+    load_data_from_csv(os.path.join(DATA_DIR, "attendance.csv"), student_attendance_data, 'studentId', is_list=True)
+
+    # Load courses
     try:
-        load_data_from_csv(COURSES_CSV, course_data, 'courseCode', is_list=False)
+        load_data_from_csv(os.path.join(DATA_DIR, "courses.csv"), course_data, 'courseCode', is_list=False)
     except Exception as e:
-        print(f"Warning: Could not load courses from {COURSES_CSV}: {e}")
+        print(f"Warning: Could not load courses from courses.csv: {e}")
+
 
     print("\n--- Initial Data Loaded ---")
     print(f"Student Logins: {len(student_login_data)} loaded.")
