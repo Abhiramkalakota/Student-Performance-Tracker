@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Student - {{ student.get('firstName', '') }} {{ student.get('lastName', '') }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='faculty_style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Flash message styling */
+        .flash-messages { list-style: none; padding: 0; margin: 20px 0 0 0; }
+        .flash-messages li { padding: 15px; margin-bottom: 10px; border-radius: 5px; font-weight: 500; }
+        .flash-messages .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .flash-messages .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header"><h2>Admin Panel</h2></div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="{{ url_for('faculty_dashboard') }}">Dashboard</a></li>
+                    <li><a href="{{ url_for('manage_students') }}" class="active">Students</a></li>
+                    <li><a href="{{ url_for('manage_courses') }}">Courses</a></li>
+                    <li><a href="{{ url_for('upload_data') }}">Upload Data</a></li>
+                    <li><a href="{{ url_for('reports') }}">Reports</a></li>
+                    <li><a href="{{ url_for('take_attendance') }}">Attendance</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Edit Student: {{ student.get('firstName', '?') }} {{ student.get('lastName', '?') }}</h1>
+            </header>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <ul class="flash-messages">
+                {% for category, message in messages %}
+                  <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+                </ul>
+              {% endif %}
+            {% endwith %}
+
+            <section class="add-student-form" style="margin-top: 20px;">
+                <div class="card">
+                    <h3>Update Student Information</h3>
+                    {# Form submits to the update route for this specific student #}
+                    <form action="{{ url_for('update_student', student_id=student.get('studentId')) }}" method="POST">
+                        <h4>Personal Details</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstName">First Name</label>
+                                <input type="text" id="firstName" name="firstName" class="form-control" value="{{ student.get('firstName', '') }}" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName">Last Name</label>
+                                <input type="text" id="lastName" name="lastName" class="form-control" value="{{ student.get('lastName', '') }}" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                             <div class="form-group">
+                                <label for="email">Email Address</label>
+                                <input type="email" id="email" name="email" class="form-control" value="{{ student.get('email', '') }}" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="dob">Date of Birth</label>
+                                <input type="date" id="dob" name="dob" class="form-control" value="{{ student.get('dob', '') }}" required>
+                            </div>
+                        </div>
+
+                        <h4 style="margin-top: 20px;">Academic Details</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="studentId">Student ID (Cannot Change)</label>
+                                <input type="text" id="studentId" name="studentIdDisplay" class="form-control" value="{{ student.get('studentId', '') }}" disabled>
+                                {# Pass the actual ID as a hidden field if needed, though it's in the URL #}
+                                <input type="hidden" name="studentId" value="{{ student.get('studentId', '') }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="enrollmentDate">Enrollment Date</label>
+                                <input type="date" id="enrollmentDate" name="enrollmentDate" class="form-control" value="{{ student.get('enrollmentDate', '') }}" required>
+                            </div>
+                        </div>
+                         <div class="form-row">
+                            {# Optional fields, pre-filled #}
+                             <div class="form-group">
+                                <label for="major">Major</label>
+                                <input type="text" id="major" name="major" class="form-control" value="{{ student.get('major', 'Undeclared') }}">
+                            </div>
+                             <div class="form-group">
+                                <label for="program">Program</label>
+                                <input type="text" id="program" name="program" class="form-control" value="{{ student.get('program', 'Undeclared') }}">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                              <div class="form-group">
+                                <label for="gpa">GPA</label>
+                                <input type="text" id="gpa" name="gpa" class="form-control" value="{{ student.get('gpa', '0.0') }}">
+                            </div>
+                        </div>
+
+                        <h4 style="margin-top: 20px;">Login Details (Optional: Change Password)</h4>
+                         <div class="form-row">
+                            <div class="form-group">
+                                <label for="password">New Password (leave blank to keep current)</label>
+                                <input type="password" id="password" name="password" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="confirmPassword">Confirm New Password</label>
+                                <input type="password" id="confirmPassword" name="confirmPassword" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <a href="{{ url_for('manage_students') }}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Update Student</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

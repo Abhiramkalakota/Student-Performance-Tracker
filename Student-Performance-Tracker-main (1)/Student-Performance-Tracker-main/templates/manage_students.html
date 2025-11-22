@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Students - Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='faculty_style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+     <style>
+        /* Flash message styling */
+        .flash-messages { list-style: none; padding: 0; margin: 20px 0 0 0; }
+        .flash-messages li { padding: 15px; margin-bottom: 10px; border-radius: 5px; font-weight: 500; }
+        .flash-messages .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .flash-messages .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .flash-messages .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+
+        /* Style for delete button form */
+        .delete-form { display: inline-block; margin: 0; }
+        .btn-action-delete { margin: 0 5px; }
+
+        /* Style for hidden rows during search - Ensure this exists! */
+        .hidden-row { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Admin Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="{{ url_for('faculty_dashboard') }}">Dashboard</a></li>
+                    <li><a href="{{ url_for('manage_students') }}" class="active">Students</a></li>
+                    <li><a href="{{ url_for('manage_courses') }}">Courses</a></li>
+                    <li><a href="{{ url_for('upload_data') }}">Upload Data</a></li>
+                    <li><a href="{{ url_for('reports') }}">Reports</a></li>
+                    <li><a href="{{ url_for('take_attendance') }}">Attendance</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Student Management</h1>
+                <div class="header-actions">
+                     <button class="btn btn-secondary" disabled>Export to CSV (NYI)</button>
+                     <a href="{{ url_for('add_student') }}" class="btn btn-primary">Add Student</a>
+                </div>
+            </header>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <ul class="flash-messages">
+                {% for category, message in messages %}
+                  <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+                </ul>
+              {% endif %}
+            {% endwith %}
+
+            <div class="card" style="margin-top: 20px;">
+                <div class="filter-bar">
+                    <div class="form-group">
+                        <label for="course-filter">Filter by Course:</label>
+                        <select id="course-filter" class="form-control" disabled> {/* NYI */}
+                            <option>All Courses</option>
+                        </select>
+                    </div>
+                     <div class="form-group">
+                        <label for="student-search">Search by Name/ID:</label>
+                        <input type="text" id="student-search" class="form-control" placeholder="Type to search...">
+                    </div>
+                </div>
+            </div>
+
+            <section class="student-management" style="margin-top: 20px;">
+                <h3>All Students (<span id="student-count">{{ students|length }}</span>)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Name</th>
+                            <th>Overall Grade</th>
+                            <th>Attendance</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="student-table-body">
+                        {% for student in students %}
+                        <tr>
+                            <td data-label="Student ID">{{ student.id }}</td>
+                            <td data-label="Name">{{ student.name }}</td>
+                            <td data-label="Overall Grade">{{ student.grade }}%</td>
+                            <td data-label="Attendance">{{ student.attendance }}%</td>
+                            <td data-label="Actions">
+                                <a href="{{ url_for('view_student', student_id=student.id) }}" class="btn-action">View</a>
+                                
+<a href="{{ url_for('edit_student', student_id=student.id) }}" class="btn-action">Edit</a>
+                                <form action="{{ url_for('delete_student', student_id=student.id) }}" method="POST" class="delete-form" onsubmit="return confirm('Delete student {{ student.name }} ({{ student.id }})?');">
+                                    <button type="submit" class="btn-action btn-action-delete">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr id="no-students-row">
+                            <td colspan="5" style="text-align: center;">No student data loaded.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p id="no-results-message" style="display: none; text-align: center; margin-top: 15px;">No students match your search.</p>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('student-search');
+            const tableBody = document.getElementById('student-table-body');
+            const studentRows = tableBody.getElementsByTagName('tr');
+            const noStudentsRow = document.getElementById('no-students-row');
+            const noResultsMessage = document.getElementById('no-results-message');
+            const studentCountSpan = document.getElementById('student-count');
+
+            function filterTable() {
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                let visibleCount = 0;
+                let hasStudents = false; // Flag to check if there are any student rows at all
+
+                // Iterate through all rows in the table body
+                Array.from(studentRows).forEach(row => {
+                    // Skip the row if it's the placeholder for no students
+                    if (row.id === 'no-students-row') {
+                        row.style.display = 'none'; // Initially hide it if search starts
+                        return;
+                    }
+
+                    hasStudents = true; // Mark that we found at least one student row
+                    const idCell = row.cells[0]; // Student ID column
+                    const nameCell = row.cells[1]; // Name column
+
+                    // Check if cells exist before trying to read content
+                    if (idCell && nameCell) {
+                        const idText = idCell.textContent.toLowerCase();
+                        const nameText = nameCell.textContent.toLowerCase();
+
+                        // Show row if search term is empty or matches ID/Name
+                        if (searchTerm === '' || idText.includes(searchTerm) || nameText.includes(searchTerm)) {
+                            row.classList.remove('hidden-row');
+                            row.style.display = ''; // Ensure row is visible
+                            visibleCount++;
+                        } else {
+                            row.classList.add('hidden-row');
+                            row.style.display = 'none'; // Ensure row is hidden
+                        }
+                    }
+                });
+
+                // Update visible student count
+                if (studentCountSpan) {
+                    studentCountSpan.textContent = visibleCount;
+                }
+
+                // Handle visibility of messages
+                if (noResultsMessage) {
+                    noResultsMessage.style.display = (visibleCount === 0 && hasStudents) ? 'block' : 'none';
+                }
+                if (noStudentsRow) {
+                    // Show "No student data" only if there were no student rows *and* no search term
+                    noStudentsRow.style.display = (!hasStudents && searchTerm === '') ? '' : 'none';
+                }
+            }
+
+            // Add event listener to the search input
+            if (searchInput && tableBody) {
+                searchInput.addEventListener('input', filterTable);
+
+                // Run filter once on load in case of browser auto-fill or back button
+                filterTable();
+            } else {
+                console.error("Search input or table body not found.");
+            }
+        });
+    </script>
+</body>
+</html>

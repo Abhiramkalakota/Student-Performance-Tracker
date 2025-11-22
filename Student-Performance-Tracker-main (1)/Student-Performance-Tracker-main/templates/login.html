@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Student Performance Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        .flash-error { /* Styling for login errors */
+            background-color: #f8d7da; color: #721c24; padding: 10px;
+            border-radius: 5px; text-align: center; margin-bottom: 15px;
+            border: 1px solid #f5c6cb; font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <div class="info-panel">
+            <div class="info-content">
+                <h1>Student Performance Tracker</h1>
+                <p>Monitor progress, track grades, and achieve your academic goals with our all-in-one dashboard.</p>
+            </div>
+            <div class="decorative-shapes">
+                <span class="shape shape1"></span> <span class="shape shape2"></span>
+                <span class="shape shape3"></span> <span class="shape shape4"></span>
+            </div>
+        </div>
+
+        <div class="login-panel">
+            <div class="menu-container">
+                <button type="button" class="hamburger-menu" id="hamburgerMenu" aria-label="Toggle user role menu">
+                    <span></span><span></span><span></span>
+                </button>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    {# Use lowercase 'student'/'faculty' for the data-role value #}
+                    <a href="#" class="dropdown-item" data-role="student">Student Login</a>
+                    <a href="#" class="dropdown-item" data-role="faculty">Faculty Login</a>
+                </div>
+            </div>
+
+            <form class="login-form" action="{{ url_for('login') }}" method="POST">
+                <h3 id="form-title">STUDENT LOGIN</h3>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                      {% if category == 'error' %}
+                        <div class="flash-error">{{ message }}</div>
+                      {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
+
+                {# NEW: Hidden input to send the selected role to the backend #}
+                <input type="hidden" name="role" id="login-role" value="student"> {# Default to student #}
+
+                <div class="input-wrapper">
+                    <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    <input type="text" name="username" placeholder="Username" required>
+                </div>
+
+                <div class="input-wrapper">
+                     <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                    <input type="password" name="password" placeholder="Password" required>
+                </div>
+
+                <div class="options-row">
+                    <label class="remember-me">
+                        <input type="checkbox" name="remember"> Remember
+                    </label>
+                    <a href="#" class="forgot-password">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="login-btn">LOGIN</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburgerMenu = document.getElementById('hamburgerMenu');
+            const dropdownMenu = document.getElementById('dropdownMenu');
+            const formTitle = document.getElementById('form-title');
+            const dropdownItems = document.querySelectorAll('.dropdown-item');
+            const loginRoleInput = document.getElementById('login-role'); // Get hidden input
+
+            hamburgerMenu.addEventListener('click', (event) => {
+                event.stopPropagation();
+                dropdownMenu.classList.toggle('show');
+            });
+
+            dropdownItems.forEach(item => {
+                item.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    const role = item.getAttribute('data-role'); // Should be 'student' or 'faculty'
+                    const roleDisplay = role.charAt(0).toUpperCase() + role.slice(1); // Capitalize first letter
+                    formTitle.textContent = `${roleDisplay.toUpperCase()} LOGIN`;
+                    loginRoleInput.value = role; // UPDATE HIDDEN INPUT VALUE
+                    dropdownMenu.classList.remove('show');
+                });
+            });
+
+            document.body.addEventListener('click', () => {
+                if (dropdownMenu.classList.contains('show')) {
+                    dropdownMenu.classList.remove('show');
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

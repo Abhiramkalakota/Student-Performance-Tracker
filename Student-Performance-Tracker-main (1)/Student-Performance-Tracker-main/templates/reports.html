@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - Admin Dashboard</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='faculty_style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="dashboard-container">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Admin Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="{{ url_for('faculty_dashboard') }}">Dashboard</a></li>
+                    <li><a href="{{ url_for('manage_students') }}">Students</a></li>
+                    <li><a href="{{ url_for('manage_courses') }}">Courses</a></li>
+                    <li><a href="{{ url_for('upload_data') }}">Upload Data</a></li>
+                    <li><a href="{{ url_for('reports') }}" class="active">Reports</a></li>
+                    <li><a href="{{ url_for('take_attendance') }}">Attendance</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+
+            <!-- Header -->
+            <header class="main-header">
+                <h1>Generate Reports</h1>
+                <div class="user-profile">
+                    <span>{{ user_name }}</span>
+                </div>
+            </header>
+
+            <!-- Report Generator -->
+            <section class="report-generator">
+                <div class="card">
+                    <h3>Report Generator</h3>
+
+                    <form id="report-form">
+                        <div class="filter-bar">
+
+                            <div class="form-group">
+                                <label for="report-type">Report Type:</label>
+                                <select id="report-type" class="form-control">
+                                    <option value="performance">Class Performance Summary</option>
+                                    <option value="attendance">Student Attendance Report</option>
+                                    <option value="gradebook">Full Gradebook Export (.csv)</option>
+                                    <option value="at_risk">Students At Risk</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="course-select">For Course:</label>
+                                <select id="course-select" class="form-control">
+                                    <option value="all">All Courses</option>
+                                    {% for course in courses %}
+                                        <option value="{{ course }}">{{ course }}</option>
+                                    {% else %}
+                                        <option disabled>No courses available</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="date-range">Date Range (Optional):</label>
+                                <input type="date" id="date-range" class="form-control">
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Generate Report</button>
+                        </div>
+                    </form>
+
+                </div>
+            </section>
+
+            <!-- Chart Section -->
+            <section class="charts-section" style="grid-template-columns: 1fr; margin-top: 30px;">
+                <div class="chart-container">
+                    <h3>Assignment Pass/Fail Rate by Course</h3>
+                    <canvas id="passFailChart"></canvas>
+                </div>
+
+                <p id="no-chart-data" style="text-align:center; display:none; margin-top:10px;">
+                    No assignment data found for charting.
+                </p>
+            </section>
+
+            <!-- Recent Reports (Static Example Only) -->
+            <section class="recent-reports" style="margin-top: 30px;">
+                <div class="card">
+                    <h3>Recently Generated Reports</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Report Name</th>
+                                <th>Course</th>
+                                <th>Date Generated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>CS305_Gradebook_Export.csv</td>
+                                <td>Computer Science</td>
+                                <td>2025-10-18 19:00</td>
+                                <td><button class="btn-action">Download</button></td>
+                            </tr>
+                            <tr>
+                                <td>PHY201_Attendance_Summary.pdf</td>
+                                <td>Physics</td>
+                                <td>2025-10-17 09:15</td>
+                                <td><button class="btn-action">Download</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Chart Script -->
+    <script>
+        const passFailCtx = document.getElementById('passFailChart');
+        const noChartMessage = document.getElementById('no-chart-data');
+
+        const chartLabels = {{ chart_labels | default('[]') | safe }};
+        const passValues = {{ pass_data | default('[]') | safe }};
+        const failValues = {{ fail_data | default('[]') | safe }};
+
+        if (chartLabels.length === 0) {
+            noChartMessage.style.display = "block";
+        }
+
+        if (passFailCtx) {
+            new Chart(passFailCtx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [
+                        {
+                            label: 'Pass',
+                            data: passValues,
+                            backgroundColor: '#4CAF50'
+                        },
+                        {
+                            label: 'Fail',
+                            data: failValues,
+                            backgroundColor: '#F44336'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true },
+                        y: { 
+                            stacked: true,
+                            beginAtZero: true,
+                            title: { display: true, text: 'Number of Assignments' }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    const total = passValues[ctx.dataIndex] + failValues[ctx.dataIndex];
+                                    const value = ctx.raw;
+                                    const percent = total ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${ctx.dataset.label}: ${value} (${percent}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>

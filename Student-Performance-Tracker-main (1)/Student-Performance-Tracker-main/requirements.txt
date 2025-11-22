@@ -1,0 +1,4 @@
+Flask
+Werkzeug 
+# Add Gunicorn for production servers
+gunicorn

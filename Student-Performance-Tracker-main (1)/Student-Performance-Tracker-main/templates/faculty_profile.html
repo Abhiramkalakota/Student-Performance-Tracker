@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Faculty</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='faculty_style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .profile-card { max-width: 600px; margin: 20px auto; }
+        .info-list li { padding: 10px 0; border-bottom: 1px solid #eee; }
+        .info-list li:last-child { border-bottom: none; }
+        .info-list strong { min-width: 100px; display: inline-block; color: #555;}
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header"><h2>Admin Panel</h2></div>
+            <nav class="sidebar-nav">
+                 <ul>
+                    {# Use url_for for dynamic links #}
+                    <li><a href="{{ url_for('faculty_dashboard') }}">Dashboard</a></li>
+                    <li><a href="{{ url_for('manage_students') }}">Students</a></li>
+                    <li><a href="{{ url_for('manage_courses') }}">Courses</a></li>
+                    <li><a href="{{ url_for('upload_data') }}">Upload Data</a></li>
+                    <li><a href="{{ url_for('reports') }}">Reports</a></li>
+                    <li><a href="{{ url_for('take_attendance') }}">Attendance</a></li>
+                    {# Add a link to the profile page itself, make it active #}
+                    <li><a href="{{ url_for('faculty_profile') }}" class="active">My Profile</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>My Faculty Profile</h1>
+                 {# Keep user profile display consistent #}
+                 <div class="user-profile">
+                    <span>{{ user_name }}</span>
+                    {# Add avatar/icon if desired #}
+                </div>
+            </header>
+
+            <div class="card profile-card">
+                <h3>Profile Details</h3>
+                {% if faculty_info %}
+                    <ul class="info-list" style="list-style: none; padding: 0; margin-top: 15px;">
+                        <li><strong>Username:</strong> {{ faculty_info.id }}</li>
+                        <li><strong>Name:</strong> {{ faculty_info.name }}</li>
+                        <li><strong>Role:</strong> {{ faculty_info.role | capitalize }}</li>
+                        {# Add more details here if available in faculty_users dict #}
+                        {# <li><strong>Department:</strong> {{ faculty_info.department | default('N/A') }}</li> #}
+                    </ul>
+                {% else %}
+                    <p>Could not load profile information.</p>
+                {% endif %}
+
+                {# Placeholder for future actions like changing password #}
+                <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+                     <button class="btn btn-secondary btn-disabled" disabled>Change Password (NYI)</button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</body>
+</html>

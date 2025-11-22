@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Attendance - Student Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='student_style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Dashboard</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="{{ url_for('student_dashboard') }}">Overview</a></li>
+                    <li><a href="{{ url_for('my_courses') }}">My Courses</a></li>
+                    <li><a href="{{ url_for('grades') }}">Grades</a></li>
+                    <li><a href="{{ url_for('attendance') }}" class="active">Attendance</a></li>
+                    <li><a href="{{ url_for('profile') }}">Profile</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>My Attendance</h1>
+                <div class="user-profile">
+                    <span>{{ user_name }}</span>
+                    <img src="https://placehold.co/40x40/E8E8E8/4a4a4a?text={{ user_name[0] }}" alt="User Avatar">
+                </div>
+            </header>
+
+            <section class="kpi-cards">
+                <div class="card">
+                    <h3>Overall Attendance</h3>
+                    <p>{{ overall_perc }}%</p>
+                    <span>Excellent Record</span>
+                </div>
+                <div class="card">
+                    <h3>Classes Attended</h3>
+                    <p>{{ present_count }}</p>
+                    <span>Out of {{ total_classes }}</span>
+                </div>
+                <div class="card">
+                    <h3>Classes Absent</h3>
+                    <p>{{ absent_count }}</p>
+                    <span>Current Semester</span>
+                </div>
+                <div class="card">
+                    <h3>Times Late</h3>
+                    <p>{{ late_count }}</p>
+                    <span>Current Semester</span>
+                </div>
+            </section>
+            
+            <div class="attendance-layout">
+                <section class="interactive-attendance">
+                    <div class="card filter-card">
+                        <h3>Daily Log</h3>
+                    </div>
+
+                    <div class="attendance-results">
+                        <h4>Showing All Records (Recent First)</h4>
+                        {% for log in daily_log %}
+                            {% if log.status == 'Present' %}
+                                <div class="attendance-slot-card status-present-card">
+                            {% elif log.status == 'Absent' %}
+                                <div class="attendance-slot-card status-absent-card">
+                            {% else %}
+                                <div class="attendance-slot-card status-late-card">
+                            {% endif %}
+                            <div class="slot-time">{{ log.date }}</div>
+                            <div class="slot-details">
+                                <span class="slot-subject">{{ log.courseName }}</span>
+                                <span class="slot-instructor">{{ log.instructor }}</span>
+                            </div>
+                            <div class="slot-status">
+                                {% if log.status == 'Present' %}
+                                    <span class="status status-present">Present</span>
+                                {% elif log.status == 'Absent' %}
+                                    <span class="status status-absent">Absent</span>
+                                {% else %}
+                                    <span class="status status-late">Late</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% else %}
+                            <p>No attendance records found.</p>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <section class="subject-wise-summary">
+                    <div class="card">
+                        <h3>Subject-wise Percentage</h3>
+                        <div class="subject-list">
+                            {% for subject in subject_summary %}
+                            <div class="subject-attendance-item">
+                                <h4>{{ subject.name }} <span class="percentage-value">{{ subject.percentage }}%</span></h4>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar">
+                                        <div class="progress" style="width: {{ subject.percentage }}%; background-color: #007bff;"></div>
+                                    </div>
+                                </div>
+                                <p class="raw-numbers">Attended: {{ subject.attended }} of {{ subject.total }} classes</p>
+                            </div>
+                            {% else %}
+                                <p>No subject data available.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+        </main>
+    </div>
+</body>
+</html>

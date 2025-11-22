@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Student - {{ student.get('firstName', '') }} {{ student.get('lastName', '') }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='faculty_style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='student_style.css') }}">
+    <style>
+        /* Add specific styles for this page if needed */
+        .info-list li { margin-bottom: 8px; }
+        .info-list strong { min-width: 140px; display: inline-block; font-weight: 500; color: #555;} /* Adjusted weight */
+        .btn-danger { background-color: #dc3545; border-color: #dc3545; color: white; }
+        .btn-danger:hover { background-color: #c82333; border-color: #bd2130; }
+        .btn-full-width { display: block; width: 100%; text-align: center; margin-bottom: 10px; } /* Ensure block display */
+        /* Ensure disabled buttons look clearly disabled */
+        .btn-disabled { color: #6c757d !important; background-color: #e9ecef !important; border-color: #ced4da !important; cursor: not-allowed !important; }
+        .actions-container > * { margin-bottom: 10px; } /* Spacing between action items */
+        .actions-container form { margin: 15px 0 0 0; } /* Spacing above delete form */
+
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Admin Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="{{ url_for('faculty_dashboard') }}">Dashboard</a></li>
+                    <li><a href="{{ url_for('manage_students') }}" class="active">Students</a></li>
+                    <li><a href="{{ url_for('manage_courses') }}">Courses</a></li>
+                    <li><a href="{{ url_for('upload_data') }}">Upload Data</a></li>
+                    <li><a href="{{ url_for('reports') }}">Reports</a></li>
+                    <li><a href="{{ url_for('take_attendance') }}">Attendance</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Viewing Student: {{ student.get('firstName', '?') }} {{ student.get('lastName', '?') }} ({{ student.get('studentId', '?') }})</h1>
+                <div class="header-actions">
+                     <a href="{{ url_for('manage_students') }}" class="btn btn-secondary">Back to Student List</a>
+                </div>
+            </header>
+
+            <section class="kpi-cards" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-top: 20px;">
+                <div class="card">
+                    <h3>Overall Grade</h3>
+                    <p>{{ overall_grade }}%</p>
+                    <span>Based on {{ grades|length }} assignments</span>
+                </div>
+                 <div class="card">
+                    <h3>Overall Attendance</h3>
+                    <p>{{ overall_attendance }}%</p>
+                     <span>{{ attendance|length }} classes recorded</span>
+                </div>
+                 <div class="card">
+                    <h3>Current GPA</h3>
+                    <p>{{ student.get('gpa', 'N/A') }}</p>
+                     <span>As per profile</span>
+                </div>
+                 <div class="card">
+                    <h3>Major</h3>
+                    <p style="font-size: 1.2em;">{{ student.get('major', 'N/A') }}</p>
+                     <span>{{ student.get('program', 'N/A') }}</span>
+                </div>
+            </section>
+
+             <section class="student-details" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 30px;">
+                <div class="card">
+                    <h3>Profile Information</h3>
+                    <ul class="info-list" style="padding-left: 0;"> {/* Removed default padding */}
+                        <li><strong>Student ID:</strong> {{ student.get('studentId', '?') }}</li>
+                        <li><strong>Name:</strong> {{ student.get('firstName', '?') }} {{ student.get('lastName', '?') }}</li>
+                        <li><strong>Email:</strong> <a href="mailto:{{ student.get('email', '') }}">{{ student.get('email', 'N/A') }}</a></li>
+                        <li><strong>Enrollment Date:</strong> {{ student.get('enrollmentDate', 'N/A')}}</li>
+                         <li><strong>Date of Birth:</strong> {{ student.get('dob', 'N/A')}}</li>
+                         {# Add other fields if needed #}
+                    </ul>
+                     <div style="margin-top: 20px;">
+                         <button class="btn btn-secondary btn-disabled" disabled>Edit Profile (NYI)</button>
+                     </div>
+                </div>
+
+                <div class="card">
+                     <h3>Actions</h3>
+                     {# UPDATED: Action items wrapper div #}
+                     <div class="actions-container" style="margin-top: 15px;">
+                         {# View Full Gradebook Link - Corrected to be functional link #}
+                         <a href="{{ url_for('student_gradebook', student_id=student.get('studentId')) }}" class="btn btn-primary btn-full-width">View Full Gradebook</a>
+
+                         {# View Full Attendance Log Link - Corrected to be functional link #}
+                         <a href="{{ url_for('student_attendance_log', student_id=student.get('studentId')) }}" class="btn btn-primary btn-full-width">View Full Attendance Log</a>
+
+                         <form action="{{ url_for('delete_student', student_id=student.get('studentId')) }}" method="POST" onsubmit="return confirm('Permanently delete student {{ student.get('firstName', '') }} {{ student.get('lastName', '') }} ({{ student.get('studentId', '') }})? This cannot be undone.');">
+                             <button type="submit" class="btn btn-danger btn-full-width">Delete This Student</button>
+                         </form>
+                     </div>
+                </div>
+             </section>
+
+            <section class="recent-activity" style="margin-top: 30px;">
+                 <div class="card">
+                    <h3>Recent Grades (Last 5)</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date Graded</th>
+                                <th>Course</th>
+                                <th>Assignment</th>
+                                <th>Type</th>
+                                <th>Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for grade in grades[:5] %} {# Slice to show only top 5 #}
+                            <tr>
+                                <td>{{ grade.get('dateGraded', 'N/A') }}</td>
+                                <td>{{ grade.get('courseName', '?') }}</td>
+                                <td>{{ grade.get('assignmentName', '?') }}</td>
+                                <td>{{ grade.get('assignmentType', '?') }}</td>
+                                <td>{{ grade.get('score', '?') }}/100</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="5" style="text-align: center;">No grades found for this student.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="recent-activity" style="margin-top: 30px;">
+                 <div class="card">
+                    <h3>Recent Attendance (Last 5)</h3>
+                    <table>
+                         <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Course</th>
+                                <th>Instructor</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                         <tbody>
+                            {% for log in attendance[:5] %} {# Slice to show only top 5 #}
+                            <tr>
+                                <td>{{ log.get('date', 'N/A') }}</td>
+                                <td>{{ log.get('courseName', '?') }}</td>
+                                <td>{{ log.get('instructor', 'N/A') }}</td>
+                                <td>
+                                     {% set status = log.get('status', '') %}
+                                     {% if status == 'Present' %}
+                                        <span class="status status-present">Present</span>
+                                    {% elif status == 'Absent' %}
+                                        <span class="status status-absent">Absent</span>
+                                    {% elif status == 'Late' %}
+                                        <span class="status status-late">Late</span>
+                                     {% else %}
+                                        {{ status }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" style="text-align: center;">No attendance records found for this student.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</body>
+</html>
